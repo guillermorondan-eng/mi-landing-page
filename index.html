@@ -97,6 +97,16 @@
           console.error("Error:", error);
       }
   }
+
+  // Esta parte muestra el archivo seleccionado en pantalla automáticamente
+  document.getElementById('inputArchivos').addEventListener('change', function() {
+      const visor = document.getElementById('visorArchivo');
+      if (this.files.length > 0) {
+          visor.innerText = "Archivo seleccionado: " + this.files[0].name;
+      } else {
+          visor.innerText = "";
+      }
+  });
 </script>
 </body>
 </html>
