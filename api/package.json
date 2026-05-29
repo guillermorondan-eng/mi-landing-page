@@ -1,0 +1,8 @@
+{
+  "name": "factura-ai",
+  "version": "1.0.0",
+  "dependencies": {
+    "@google/genai": "*",
+    "express": "^4.18.2"
+  }
+}
