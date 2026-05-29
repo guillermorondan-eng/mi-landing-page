@@ -70,43 +70,32 @@
     FacturaAI MVP v1.2 — Servidor Cloud Independiente
   </footer>
 
-  <script>
-    async function procesarFactura() {
-        const input = document.getElementById('inputArchivos');
-        const cola = document.getElementById('colaProcesamiento');
+<script>
+  async function procesarFactura() {
+      const input = document.getElementById('inputArchivos');
+      
+      // Esto escribe en la consola (F12) lo que pasa
+      console.log("Archivos detectados:", input.files.length);
+      
+      if (input.files.length === 0) {
+          alert("No hay archivos seleccionados");
+          return;
+      }
 
-        if (input.files.length === 0) {
-            alert("¡Pará! Primero seleccioná al menos una factura.");
-            return;
-        }
+      const formData = new FormData();
+      formData.append('archivo', input.files[0]);
 
-        // Feedback visual
-        cola.innerHTML = '<p class="text-blue-400 animate-pulse">Enviando al servidor para procesar...</p>';
-        
-        // Creamos el paquete de datos para enviar
-        const formData = new FormData();
-        for (let i = 0; i < input.files.length; i++) {
-            formData.append('files', input.files[i]);
-        }
-
-        try {
-            // Aquí ocurre la "magia": llamamos a nuestra API
-            const respuesta = await fetch('/api/procesar', {
-                method: 'POST',
-                body: formData
-            });
-
-            const datos = await respuesta.json();
-
-            // Mostramos la respuesta real que viene de procesar.js
-            cola.innerHTML = `<p class="text-green-400">${datos.mensaje || "Procesado correctamente"}</p>`;
-            console.log("Respuesta del servidor:", datos);
-            
-        } catch (error) {
-            console.error("Error:", error);
-            cola.innerHTML = '<p class="text-red-400">Error al procesar la factura. Intenta de nuevo.</p>';
-        }
-    }
-  </script>
+      try {
+          const respuesta = await fetch('/api/procesar', {
+              method: 'POST',
+              body: formData
+          });
+          const datos = await respuesta.json();
+          console.log("Respuesta:", datos);
+      } catch (error) {
+          console.error("Error:", error);
+      }
+  }
+</script>
 </body>
 </html>
