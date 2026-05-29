@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
                 throw new Error("La variable de entorno GEMINI_API_KEY no está configurada.");
             }
 
-           const genAI = new GoogleGenerativeAI("AIzaSyCys3zgiN3izn7PiOoI-3wvAiwNajaTFaw");
+           const genAI = new GoogleGenerativeAI("AQ.Ab8RN6JtSHquDDxJAEtzZGyUxaVwqry0NBpBzB7CN9Yf4wbDNQ");
            const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
             const result = await model.generateContent([
