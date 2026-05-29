@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FacturaAI - Extractor inteligente de Comprobantes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+  <header class="border-b border-slate-900 bg-slate-950/50 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="bg-blue-600 p-2 rounded-lg text-white">
+          <i class="fa-solid fa-brain text-xl"></i>
+        </div>
+        <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Factura<span class="text-blue-500">AI</span></span>
+      </div>
+      <div>
+        <span class="text-xs bg-slate-900 border border-slate-800 text-slate-400 px-3 py-1.5 rounded-full font-mono">Plan Profesional Pruebas</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-12 w-full flex-grow flex flex-col items-center justify-center">
+    
+    <div class="text-center max-w-xl mx-auto mb-10">
+      <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl mb-4 bg-gradient-to-b from-white to-slate-300 bg-clip-text text-transparent">
+        Someté tus facturas al control de la IA
+      </h1>
+      <p class="text-slate-400 text-sm">
+        Subí tus comprobantes en lote (Fotos o PDFs). Nuestro sensor digital extraerá el RUT, montos e impuestos, clasificando todo en un reporte estructurado.
+      </p>
+    </div>
+
+    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 w-full max-w-lg backdrop-blur shadow-2xl">
+      
+      <div class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-950/40 group">
+        <input type="file" id="inputArchivos" class="hidden" accept="image/*,application/pdf" multiple>
+        <label for="inputArchivos" class="cursor-pointer">
+          <div class="text-slate-500 group-hover:text-blue-400 transition mb-3">
+            <i class="fa-solid fa-cloud-arrow-up text-4xl"></i>
+          </div>
+          <p class="text-sm font-semibold text-slate-300">Seleccionar o arrastrar facturas</p>
+          <p class="text-xs text-slate-500 mt-1">Imágenes o archivos PDF (Máx. 10 por tanda)</p>
+        </label>
+      </div>
+
+      <button class="mt-5 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-file-pdf"></i>
+        <span>Procesar y Generar Reporte PDF</span>
+      </button>
+
+      <div class="mt-6 border-t border-slate-800/60 pt-4">
+        <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase mb-3">
+          Cola de procesamiento
+        </h3>
+        
+        <div class="space-y-2 bg-slate-950/60 rounded-xl p-3 border border-slate-800 font-mono text-xs text-slate-400 min-h-[100px] flex flex-col justify-center items-center text-center">
+          <div class="text-slate-600 mb-1"><i class="fa-solid fa-inbox text-xl"></i></div>
+          <p class="text-slate-500">Ningún archivo cargado todavía en el sistema.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-900 py-4 bg-slate-950/20 text-center text-xs text-slate-500 font-mono">
+    FacturaAI MVP v1.2 — Servidor Cloud Independiente
+  </footer>
+
+</body>
+</html>
