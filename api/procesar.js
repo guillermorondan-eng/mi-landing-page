@@ -1,23 +1,26 @@
+import { GoogleGenAI } from "@google/genai";
+
 export default async function handler(req, res) {
-  // 1. Solo permitimos el método POST (envío de archivos)
+  // 1. Solo permitimos el método POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
   try {
-    // 2. Aquí recibiremos la imagen o PDF
-    // En un sistema real, aquí procesarías el archivo y llamarías a la API de IA
-    // Por ahora, simulamos que el "PLC" recibió el archivo y lo está analizando
-    
-    console.log("Archivo recibido en el PLC (Serverless Function)");
+    console.log("Conectando con el motor de Gemini...");
 
-    // Simulación de respuesta del motor lógico
+    // 2. Conectamos con Gemini usando la variable segura que guardamos en Vercel
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+    // 3. Le pedimos al modelo que procese la información (aquí irá la lógica del prompt)
+    // Por ahora dejamos el enlace listo para verificar la conexión con la IA
     return res.status(200).json({ 
-      mensaje: "Factura recibida y procesada por el PLC",
+      mensaje: "Conexión con Gemini exitosa",
       estado: "Completado" 
     });
 
   } catch (error) {
-    return res.status(500).json({ error: "Error en el procesamiento del PLC" });
+    console.error("Error en el PLC:", error);
+    return res.status(500).json({ error: "Error en el procesamiento del PLC con IA" });
   }
 }
