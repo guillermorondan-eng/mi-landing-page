@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
             }
 
            const genAI = new GoogleGenerativeAI("AIzaSyCys3zgiN3izn7PiOoI-3wvAiwNajaTFaw");
-           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+           const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
             const result = await model.generateContent([
                 {
