@@ -1,8 +1,9 @@
 JSON
-
-
 {
   "rewrites": [
-    { "source": "/api/procesar", "destination": "/api/procesar.js" }
+    {
+      "source": "/api/procesar",
+      "destination": "/api/procesar.js"
+    }
   ]
 }
