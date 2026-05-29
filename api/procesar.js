@@ -9,8 +9,10 @@ module.exports = async function handler(req, res) {
     const busboy = Busboy({ headers: req.headers });
     let fileBuffer = null;
     let mimeType = "";
+    let isFileReceived = false;
 
     busboy.on('file', (fieldname, file, info) => {
+        isFileReceived = true;
         mimeType = info.mimeType;
         const chunks = [];
         file.on('data', (data) => chunks.push(data));
@@ -18,16 +20,18 @@ module.exports = async function handler(req, res) {
     });
 
     busboy.on('finish', async () => {
-        if (!fileBuffer) {
+        if (!isFileReceived || !fileBuffer) {
             return res.status(400).json({ error: 'No se recibió ningún archivo' });
         }
 
         try {
-            // Inicialización correcta de la IA
+            if (!process.env.GEMINI_API_KEY) {
+                throw new Error("La variable de entorno GEMINI_API_KEY no está configurada.");
+            }
+
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            // Enviamos el archivo como datos en línea y la instrucción
             const result = await model.generateContent([
                 {
                     inlineData: {
@@ -35,15 +39,16 @@ module.exports = async function handler(req, res) {
                         mimeType: mimeType
                     }
                 },
-                "Extrae de esta factura los siguientes datos en formato JSON: RUT, monto total, impuestos y nombre del emisor."
+                "Extrae de esta factura los siguientes datos en formato JSON: RUT, monto total, impuestos y nombre del emisor. Responde solo con el JSON."
             ]);
 
             const response = await result.response;
             return res.status(200).json({ resultado: response.text() });
 
         } catch (error) {
+            console.error("Error detallado:", error); // Esto aparecerá en los logs de Vercel
             return res.status(500).json({ 
-                error: "Error en el procesamiento de la IA", 
+                error: "Error en el procesamiento", 
                 detalles: error.message 
             });
         }
