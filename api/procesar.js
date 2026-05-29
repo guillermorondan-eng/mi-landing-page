@@ -1,26 +1,40 @@
-import { GoogleGenAI } from "@google/genai";
+const { GoogleGenAI } = require('@google/genai');
 
-export default async function handler(req, res) {
-  // 1. Solo permitimos el método POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
+module.exports = async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Método no permitido' });
+    }
 
-  try {
-    console.log("Conectando con el motor de Gemini...");
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const { archivo, tipo } = req.body;
 
-    // 2. Conectamos con Gemini usando la variable segura que guardamos en Vercel
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        if (!archivo) {
+            return res.status(400).json({ error: 'No se recibió ningún archivo' });
+        }
 
-    // 3. Le pedimos al modelo que procese la información (aquí irá la lógica del prompt)
-    // Por ahora dejamos el enlace listo para verificar la conexión con la IA
-    return res.status(200).json({ 
-      mensaje: "Conexión con Gemini exitosa",
-      estado: "Completado" 
-    });
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [
+                {
+                    inlineData: {
+                        mimeType: tipo || "application/pdf",
+                        data: archivo
+                    }
+                },
+                "Extrae de esta factura los siguientes datos en formato JSON: RUT, monto total, impuestos y nombre del emisor."
+            ],
+        });
 
-  } catch (error) {
-    console.error("Error en el PLC:", error);
-    return res.status(500).json({ error: "Error en el procesamiento del PLC con IA" });
-  }
-}
+        return res.status(200).json({ 
+            mensaje: "Procesado por Gemini con éxito", 
+            resultado: response.text 
+        });
+
+    } catch (error) {
+        return res.status(500).json({ 
+            error: "Error en el procesamiento de la IA", 
+            detalles: error.message 
+        });
+    }
+};
