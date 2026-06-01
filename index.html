@@ -30,7 +30,7 @@
         Someté tus facturas al control de la IA
       </h1>
       <p class="text-slate-400 text-sm">
-        Subí tus comprobantes (Fotos o PDFs). Nuestro sensor digital extraerá el RUT, montos e impuestos, clasificando todo en un reporte estructurado.
+        Subí tus comprobantes (Fotos o PDFs). Nuestro sensor digital extraerá el RUT, RUC, montos e impuestos, clasificando todo en un reporte estructurado.
       </p>
     </div>
 
@@ -80,9 +80,10 @@
           <thead>
             <tr class="bg-slate-950/80 border-b border-slate-800 text-slate-400 text-xs tracking-wider uppercase font-semibold">
               <th class="p-4">Proveedor</th>
-              <th class="p-4">RUT / Identificación</th>
+              <th class="p-4">RUT</th>
+              <th class="p-4">RUC</th>
               <th class="p-4">Fecha</th>
-              <th class="p-4">N° Documento</th>
+              <th class="p-4">N° Documento/Factura</th>
               <th class="p-4">Base Imp.</th>
               <th class="p-4">Impuesto</th>
               <th class="p-4">Total</th>
@@ -117,8 +118,6 @@
       const cuerpoTabla = document.getElementById('cuerpo-tabla');
       const btnProcesar = document.getElementById('btnProcesar');
       
-      console.log("Archivos detectados:", input.files.length);
-      
       if (input.files.length === 0) {
           alert("Por favor, selecciona primero una imagen o PDF.");
           return;
@@ -138,7 +137,6 @@
           });
           
           const datos = await respuesta.json();
-          console.log("Respuesta del Backend:", datos);
 
           if (datos.status === "SUCCESS" && datos.facturas) {
               cuerpoTabla.innerHTML = "";
@@ -148,6 +146,7 @@
                       <tr class="hover:bg-slate-900/40 transition">
                           <td class="p-4 font-semibold text-white">${factura.proveedor || 'N/A'}</td>
                           <td class="p-4 font-mono text-slate-300">${factura.rut || 'N/A'}</td>
+                          <td class="p-4 font-mono text-slate-300">${factura.ruc || 'N/A'}</td>
                           <td class="p-4 text-slate-400">${factura.fecha || 'N/A'}</td>
                           <td class="p-4 font-mono text-slate-400">${factura.numero || 'N/A'}</td>
                           <td class="p-4 text-slate-300 font-mono">$${Number(factura.baseImponible || 0).toFixed(2)}</td>
@@ -180,7 +179,6 @@
       }
   }
 
-  // FUNCIÓN COMPLETA PARA PASAR A EXCEL SIN DEFORMAR FILAS
   function copiarTablaParaExcel() {
       const cuerpoTabla = document.getElementById("cuerpo-tabla");
       const filas = cuerpoTabla.querySelectorAll("tr");
@@ -190,34 +188,31 @@
           return;
       }
 
-      // 1. Armamos los encabezados separados por tabuladores (\t)
-      let contenidoTexto = "Proveedor\tRUT / Identificación\tFecha\tN° Documento\tBase Imp.\tImpuesto\tTotal\tCategoría\n";
+      // 1. Encabezados actualizados con RUC y Nombre de columna ajustado
+      let contenidoTexto = "Proveedor\tRUT\tRUC\tFecha\tN° Documento/Factura\tBase Imp.\tImpuesto\tTotal\tCategoría\n";
 
-      // 2. Recorremos fila por fila
+      // 2. Recorremos filas (ahora son 9 columnas en total)
       filas.forEach(fila => {
           const celdas = fila.querySelectorAll("td");
           if (celdas.length > 0) {
               const datosFila = Array.from(celdas).map((celda, indice) => {
                   let textoClean = celda.innerText.trim();
                   
-                  // Limpieza quirúrgica de saltos de línea molestos para Excel (como en los totales)
-                  if (indice === 6) {
+                  // Limpieza del campo Total (índice 7 ahora debido a la inserción de RUC)
+                  if (indice === 7) {
                       textoClean = textoClean.replace(/\n/g, " ");
                   }
                   return textoClean;
               });
               
-              // Unimos las celdas con tabulación y cerramos la fila con salto de renglón (\n)
               contenidoTexto += datosFila.join("\t") + "\n";
           }
       });
 
-      // 3. Inyectamos la estructura formateada al portapapeles
       navigator.clipboard.writeText(contenidoTexto).then(() => {
           const btn = document.getElementById("btnCopiarExcel");
           const textoOriginal = btn.innerHTML;
           
-          // Cambio visual temporal
           btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>¡Copiado con éxito!</span>`;
           btn.classList.replace('bg-emerald-600', 'bg-slate-800');
           
