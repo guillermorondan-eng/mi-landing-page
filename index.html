@@ -23,18 +23,18 @@
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-12 w-full flex-grow flex flex-col items-center justify-center">
+  <main class="max-w-5xl mx-auto px-4 py-12 w-full flex-grow flex flex-col items-center">
     
     <div class="text-center max-w-xl mx-auto mb-10">
       <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl mb-4 bg-gradient-to-b from-white to-slate-300 bg-clip-text text-transparent">
         Someté tus facturas al control de la IA
       </h1>
       <p class="text-slate-400 text-sm">
-        Subí tus comprobantes en lote (Fotos o PDFs). Nuestro sensor digital extraerá el RUT, montos e impuestos, clasificando todo en un reporte estructurado.
+        Subí tus comprobantes (Fotos o PDFs). Nuestro sensor digital extraerá el RUT, montos e impuestos, clasificando todo en un reporte estructurado.
       </p>
     </div>
 
-    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 w-full max-w-lg backdrop-blur shadow-2xl">
+    <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 w-full max-w-lg backdrop-blur shadow-2xl mb-10">
       
       <div class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-950/40 group">
         <input type="file" id="inputArchivos" class="hidden" accept="image/*,application/pdf" multiple>
@@ -43,45 +43,83 @@
             <i class="fa-solid fa-cloud-arrow-up text-4xl"></i>
           </div>
           <p class="text-sm font-semibold text-slate-300">Seleccionar o arrastrar facturas</p>
-          <p class="text-xs text-slate-500 mt-1">Imágenes o archivos PDF (Máx. 10 por tanda)</p>
+          <p class="text-xs text-slate-500 mt-1">Imágenes o archivos PDF</p>
         </label>
       </div>
-<div id="statusArchivo" class="text-xs text-blue-400 mt-2 font-medium"></div>
+      <div id="statusArchivo" class="text-xs text-blue-400 mt-2 font-medium"></div>
+      
       <button id="btnProcesar" onclick="procesarFactura()" class="mt-5 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center justify-center space-x-2">
-        <i class="fa-solid fa-file-pdf"></i>
-        <span>Procesar y Generar Reporte PDF</span>
+        <i class="fa-solid fa-bolt"></i>
+        <span>Procesar Documento con IA</span>
       </button>
-      <p id="visorArchivo" style="color: white; margin-top: 10px;"></p>
+      <p id="visorArchivo" class="text-xs text-slate-400 mt-3 font-mono"></p>
 
       <div class="mt-6 border-t border-slate-800/60 pt-4">
         <h3 class="text-xs font-semibold text-slate-400 tracking-wider uppercase mb-3">
           Cola de procesamiento
         </h3>
         
-        <div id="colaProcesamiento" class="space-y-2 bg-slate-950/60 rounded-xl p-3 border border-slate-800 font-mono text-xs text-slate-400 min-h-[100px] flex flex-col justify-center items-center text-center">
-          <div class="text-slate-600 mb-1"><i class="fa-solid fa-inbox text-xl"></i></div>
-          <p class="text-slate-500">Ningún archivo cargado todavía en el sistema.</p>
+        <div id="colaProcesamiento" class="space-y-2 bg-slate-950/60 rounded-xl p-3 border border-slate-800 font-mono text-xs text-slate-400 min-h-[60px] flex flex-row justify-center items-center space-x-2">
+          <div class="text-slate-600"><i class="fa-solid fa-inbox text-base"></i></div>
+          <p id="textoCola" class="text-slate-500">Ningún archivo en proceso.</p>
         </div>
       </div>
-
     </div>
+
+    <div id="contenedorTabla" class="w-full bg-slate-900/30 border border-slate-800 rounded-2xl p-6 backdrop-blur shadow-2xl hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-slate-200 flex items-center space-x-2">
+          <i class="fa-solid fa-table-list text-blue-500"></i>
+          <span>Comprobantes Extraídos Extraoficiales</span>
+        </h2>
+        <span class="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-md font-mono">Lazo Listo</span>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+        <table class="w-full text-left border-collapse font-sans text-sm">
+          <thead>
+            <tr class="bg-slate-950/80 border-b border-slate-800 text-slate-400 text-xs tracking-wider uppercase font-semibold">
+              <th class="p-4">Proveedor</th>
+              <th class="p-4">RUT / Identificación</th>
+              <th class="p-4">Fecha</th>
+              <th class="p-4">N° Documento</th>
+              <th class="p-4">Base Imp.</th>
+              <th class="p-4">Impuesto</th>
+              <th class="p-4">Total</th>
+              <th class="p-4">Categoría</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla" class="divide-y divide-slate-800/50 bg-slate-950/20">
+            </tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 
-  <footer class="border-t border-slate-900 py-4 bg-slate-950/20 text-center text-xs text-slate-500 font-mono">
+  <footer class="border-t border-slate-900 py-4 bg-slate-950/20 text-center text-xs text-slate-500 font-mono analytical-footer">
     FacturaAI MVP v1.2 — Servidor Cloud Independiente
   </footer>
 
 <script>
   async function procesarFactura() {
       const input = document.getElementById('inputArchivos');
+      const textoCola = document.getElementById('textoCola');
+      const contenedorTabla = document.getElementById('contenedorTabla');
+      const cuerpoTabla = document.getElementById('cuerpo-tabla');
+      const btnProcesar = document.getElementById('btnProcesar');
       
-      // Esto escribe en la consola (F12) lo que pasa
       console.log("Archivos detectados:", input.files.length);
       
       if (input.files.length === 0) {
-          alert("No hay archivos seleccionados");
+          alert("Por favor, selecciona primero una imagen o PDF.");
           return;
       }
+
+      // Cambiamos estados visuales para simular el lazo de procesamiento
+      btnProcesar.disabled = true;
+      btnProcesar.classList.add('opacity-50', 'cursor-not-allowed');
+      textoCola.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blue-500 mr-2"></i> Procesando archivo en el sensor de Google...`;
 
       const formData = new FormData();
       formData.append('archivo', input.files[0]);
@@ -91,20 +129,65 @@
               method: 'POST',
               body: formData
           });
+          
           const datos = await respuesta.json();
-          console.log("Respuesta:", datos);
+          console.log("Respuesta del Backend:", datos);
+
+          if (datos.status === "SUCCESS" && datos.facturas) {
+              // Limpiamos cargas previas del tbody
+              cuerpoTabla.innerHTML = "";
+              
+              // Recorremos el arreglo exactamente como lo hacías con appendRow en Sheets
+              datos.facturas.forEach(factura => {
+                  const fila = `
+                      <tr class="hover:bg-slate-900/40 transition">
+                          <td class="p-4 font-semibold text-white">${factura.proveedor || 'N/A'}</td>
+                          <td class="p-4 font-mono text-slate-300">${factura.rut || 'N/A'}</td>
+                          <td class="p-4 text-slate-400">${factura.fecha || 'N/A'}</td>
+                          <td class="p-4 font-mono text-slate-400">${factura.numero || 'N/A'}</td>
+                          <td class="p-4 text-slate-300 font-mono">$${Number(factura.baseImponible || 0).toFixed(2)}</td>
+                          <td class="p-4 text-slate-300 font-mono">$${Number(factura.impuesto || 0).toFixed(2)}</td>
+                          <td class="p-4 font-bold text-blue-400 font-mono">$${Number(factura.total || 0).toFixed(2)} <span class="text-[10px] text-slate-500">${factura.moneda || ''}</span></td>
+                          <td class="p-4">
+                              <span class="px-2.5 py-1 text-xs rounded-full font-medium bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                                  ${factura.categoria || 'Otros'}
+                              </span>
+                          </td>
+                      </tr>
+                  `;
+                  cuerpoTabla.innerHTML += fila;
+              });
+
+              // Hacemos visible la sección de la tabla
+              contenedorTabla.classList.remove('hidden');
+              textoCola.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle-check"></i> Extracción completada con éxito.</span>`;
+          } else {
+              textoCola.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-circle-exclamation"></i> Error en procesamiento.</span>`;
+              alert("Error: " + (datos.detalles || "No se pudo interpretar el formato JSON de la factura."));
+          }
+
       } catch (error) {
-          console.error("Error:", error);
+          console.error("Error en el lazo frontend:", error);
+          textoCola.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-circle-exclamation"></i> Falla en el lazo.</span>`;
+          alert("Falla de comunicación con el endpoint de Vercel.");
+      } finally {
+          // Devolvemos el botón a su estado operativo normal
+          btnProcesar.disabled = false;
+          btnProcesar.classList.remove('opacity-50', 'cursor-not-allowed');
       }
   }
 
-  // Esta parte muestra el archivo seleccionado en pantalla automáticamente
+  // Lógica para que el visor de archivos muestre el nombre del documento seleccionado
   document.getElementById('inputArchivos').addEventListener('change', function() {
       const visor = document.getElementById('visorArchivo');
+      const textoCola = document.getElementById('textoCola');
+      
       if (this.files.length > 0) {
-          visor.innerText = "Archivo seleccionado: " + this.files[0].name;
+          visor.innerHTML = `<i class="fa-regular fa-file-image text-blue-400 mr-1"></i> Archivo cargado: <span class="text-slate-200">${this.files[0].name}</span>`;
+          textoCola.innerHTML = `<span class="text-slate-400">Listo para procesar: ${this.files[0].name}</span>`;
       } else {
           visor.innerText = "";
+          textoCola.innerText = "Ningún archivo cargado todavía en el sistema.";
       }
   });
 </script>
