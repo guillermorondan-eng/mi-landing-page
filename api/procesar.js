@@ -20,15 +20,6 @@ module.exports = async function handler(req, res) {
     });
 
     busboy.on('finish', async () => {
-        // --- DEBUG TEMPORAL ---
-        console.log("KEY STATUS:", process.env.GEMINI_API_KEY 
-            ? `Presente - empieza con: ${process.env.GEMINI_API_KEY.substring(0, 8)}...` 
-            : "UNDEFINED O VACÍA");
-        console.log("Archivo recibido:", isFileReceived);
-        console.log("Buffer size:", fileBuffer ? fileBuffer.length : "null");
-        console.log("MimeType:", mimeType);
-        // --- FIN DEBUG ---
-
         if (!isFileReceived || !fileBuffer) {
             return res.status(400).json({ error: 'No se recibió ningún archivo' });
         }
@@ -39,7 +30,7 @@ module.exports = async function handler(req, res) {
             }
 
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemma-4-31b-it" });
 
             const result = await model.generateContent([
                 {
