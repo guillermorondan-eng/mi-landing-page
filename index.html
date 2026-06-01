@@ -60,4 +60,189 @@
         </h3>
         
         <div id="colaProcesamiento" class="space-y-2 bg-slate-950/60 rounded-xl p-3 border border-slate-800 font-mono text-xs text-slate-400 min-h-[60px] flex flex-row justify-center items-center space-x-2">
-          <div class="text-slate-600"><i class="fa-solid fa-inbox
+          <div class="text-slate-600"><i class="fa-solid fa-inbox text-base"></i></div>
+          <p id="textoCola" class="text-slate-500">Ningún archivo en proceso.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="contenedorTabla" class="w-full bg-slate-900/30 border border-slate-800 rounded-2xl p-6 backdrop-blur shadow-2xl hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-slate-200 flex items-center space-x-2">
+          <i class="fa-solid fa-table-list text-blue-500"></i>
+          <span>Comprobantes Extraídos Extraoficiales</span>
+        </h2>
+        <span class="text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-md font-mono">Lazo Listo</span>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+        <table class="w-full text-left border-collapse font-sans text-sm">
+          <thead>
+            <tr class="bg-slate-950/80 border-b border-slate-800 text-slate-400 text-xs tracking-wider uppercase font-semibold">
+              <th class="p-4">Proveedor</th>
+              <th class="p-4">RUT / Identificación</th>
+              <th class="p-4">Fecha</th>
+              <th class="p-4">N° Documento</th>
+              <th class="p-4">Base Imp.</th>
+              <th class="p-4">Impuesto</th>
+              <th class="p-4">Total</th>
+              <th class="p-4">Categoría</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla" class="divide-y divide-slate-800/50 bg-slate-950/20">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-end mt-4">
+        <button id="btnCopiarExcel" onclick="copiarTablaParaExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-600/10 transition flex items-center space-x-2">
+          <i class="fa-regular fa-copy"></i>
+          <span>Copiar datos para Excel</span>
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-900 py-4 bg-slate-950/20 text-center text-xs text-slate-500 font-mono analytical-footer">
+    FacturaAI MVP v1.2 — Servidor Cloud Independiente
+  </footer>
+
+<script>
+  async function procesarFactura() {
+      const input = document.getElementById('inputArchivos');
+      const textoCola = document.getElementById('textoCola');
+      const contenedorTabla = document.getElementById('contenedorTabla');
+      const cuerpoTabla = document.getElementById('cuerpo-tabla');
+      const btnProcesar = document.getElementById('btnProcesar');
+      
+      console.log("Archivos detectados:", input.files.length);
+      
+      if (input.files.length === 0) {
+          alert("Por favor, selecciona primero una imagen o PDF.");
+          return;
+      }
+
+      btnProcesar.disabled = true;
+      btnProcesar.classList.add('opacity-50', 'cursor-not-allowed');
+      textoCola.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-blue-500 mr-2"></i> Procesando archivo en el sensor de Google...`;
+
+      const formData = new FormData();
+      formData.append('archivo', input.files[0]);
+
+      try {
+          const respuesta = await fetch('/api/procesar', {
+              method: 'POST',
+              body: formData
+          });
+          
+          const datos = await respuesta.json();
+          console.log("Respuesta del Backend:", datos);
+
+          if (datos.status === "SUCCESS" && datos.facturas) {
+              cuerpoTabla.innerHTML = "";
+              
+              datos.facturas.forEach(factura => {
+                  const fila = `
+                      <tr class="hover:bg-slate-900/40 transition">
+                          <td class="p-4 font-semibold text-white">${factura.proveedor || 'N/A'}</td>
+                          <td class="p-4 font-mono text-slate-300">${factura.rut || 'N/A'}</td>
+                          <td class="p-4 text-slate-400">${factura.fecha || 'N/A'}</td>
+                          <td class="p-4 font-mono text-slate-400">${factura.numero || 'N/A'}</td>
+                          <td class="p-4 text-slate-300 font-mono">$${Number(factura.baseImponible || 0).toFixed(2)}</td>
+                          <td class="p-4 text-slate-300 font-mono">$${Number(factura.impuesto || 0).toFixed(2)}</td>
+                          <td class="p-4 font-bold text-blue-400 font-mono">$${Number(factura.total || 0).toFixed(2)} <span class="text-[10px] text-slate-500">${factura.moneda || ''}</span></td>
+                          <td class="p-4">
+                              <span class="px-2.5 py-1 text-xs rounded-full font-medium bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                                  ${factura.categoria || 'Otros'}
+                              </span>
+                          </td>
+                      </tr>
+                  `;
+                  cuerpoTabla.innerHTML += fila;
+              });
+
+              contenedorTabla.classList.remove('hidden');
+              textoCola.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-circle-check"></i> Extracción completada con éxito.</span>`;
+          } else {
+              textoCola.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-circle-exclamation"></i> Error en procesamiento.</span>`;
+              alert("Error: " + (datos.detalles || "No se pudo interpretar el formato JSON de la factura."));
+          }
+
+      } catch (error) {
+          console.error("Error en el lazo frontend:", error);
+          textoCola.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-circle-exclamation"></i> Falla en el lazo.</span>`;
+          alert("Falla de comunicación con el endpoint de Vercel.");
+      } finally {
+          btnProcesar.disabled = false;
+          btnProcesar.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+  }
+
+  // FUNCIÓN COMPLETA PARA PASAR A EXCEL SIN DEFORMAR FILAS
+  function copiarTablaParaExcel() {
+      const cuerpoTabla = document.getElementById("cuerpo-tabla");
+      const filas = cuerpoTabla.querySelectorAll("tr");
+      
+      if (filas.length === 0) {
+          alert("No hay datos válidos en la tabla para copiar.");
+          return;
+      }
+
+      // 1. Armamos los encabezados separados por tabuladores (\t)
+      let contenidoTexto = "Proveedor\tRUT / Identificación\tFecha\tN° Documento\tBase Imp.\tImpuesto\tTotal\tCategoría\n";
+
+      // 2. Recorremos fila por fila
+      filas.forEach(fila => {
+          const celdas = fila.querySelectorAll("td");
+          if (celdas.length > 0) {
+              const datosFila = Array.from(celdas).map((celda, indice) => {
+                  let textoClean = celda.innerText.trim();
+                  
+                  // Limpieza quirúrgica de saltos de línea molestos para Excel (como en los totales)
+                  if (indice === 6) {
+                      textoClean = textoClean.replace(/\n/g, " ");
+                  }
+                  return textoClean;
+              });
+              
+              // Unimos las celdas con tabulación y cerramos la fila con salto de renglón (\n)
+              contenidoTexto += datosFila.join("\t") + "\n";
+          }
+      });
+
+      // 3. Inyectamos la estructura formateada al portapapeles
+      navigator.clipboard.writeText(contenidoTexto).then(() => {
+          const btn = document.getElementById("btnCopiarExcel");
+          const textoOriginal = btn.innerHTML;
+          
+          // Cambio visual temporal
+          btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>¡Copiado con éxito!</span>`;
+          btn.classList.replace('bg-emerald-600', 'bg-slate-800');
+          
+          setTimeout(() => {
+              btn.innerHTML = textoOriginal;
+              btn.classList.replace('bg-slate-800', 'bg-emerald-600');
+          }, 2000);
+      }).catch(err => {
+          console.error("Error al copiar:", err);
+          alert("No se pudo copiar automáticamente.");
+      });
+  }
+
+  document.getElementById('inputArchivos').addEventListener('change', function() {
+      const visor = document.getElementById('visorArchivo');
+      const textoCola = document.getElementById('textoCola');
+      
+      if (this.files.length > 0) {
+          visor.innerHTML = `<i class="fa-regular fa-file-image text-blue-400 mr-1"></i> Archivo cargado: <span class="text-slate-200">${this.files[0].name}</span>`;
+          textoCola.innerHTML = `<span class="text-slate-400">Listo para procesar: ${this.files[0].name}</span>`;
+      } else {
+          visor.innerText = "";
+          textoCola.innerText = "Ningún archivo cargado todavía en el sistema.";
+      }
+  });
+</script>
+</body>
+</html>
