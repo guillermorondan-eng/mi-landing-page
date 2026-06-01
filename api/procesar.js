@@ -30,11 +30,9 @@ module.exports = async function handler(req, res) {
             }
 
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            
-            // CONFIGURACIÓN: Usamos el modelo con soporte de visión que tienes habilitado en tu lista
             const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
 
-            // Traemos las instrucciones exactas y detalladas que tenías en Google Sheets
+            // Prompt optimizado con instrucciones estrictas de comillas para evitar rupturas de sintaxis
             const promptInstrucciones = "Analiza la imagen o PDF adjunto. Puede contener UNA o VARIAS facturas/comprobantes. " +
                                         "Extrae los siguientes campos de CADA COMPROBANTE visible: proveedor, rut, fecha, numero, baseImponible, impuesto, total, moneda, categoria. " +
                                         "Para el campo 'rut', busca el número de RUT, Identificación Fiscal o NIT del proveedor. " +
@@ -42,8 +40,8 @@ module.exports = async function handler(req, res) {
                                         "['Repuestos y Herramientas', 'Servicios Públicos', 'Combustible y Viajes', 'Insumos de Oficina', 'Mantenimiento', 'Alimentación', 'Otros']. " +
                                         "Si no estás seguro, elige la que mejor se adapte o pon 'Otros'. " +
                                         "Debes devolver la respuesta ÚNICAMENTE en formato JSON plano dentro de un arreglo/lista, sin bloques de código markdown, sin saltos de línea. " +
-                                        "Formato requerido: [{\"proveedor\":\"...\", \"rut\":\"...\", \"fecha\":\"...\", \"numero\":\"...\", \"baseImponible\":0.00, \"impuesto\":0.00, \"total\":0.00, \"moneda\":\"...\", \"categoria\":\"...\"}]. " +
-                                        "Si un campo no es visible o no aplica, pon 'N/A'.";
+                                        "Formato requerido obligatorio: [{\"proveedor\":\"...\", \"rut\":\"...\", \"fecha\":\"...\", \"numero\":\"...\", \"baseImponible\":0.00, \"impuesto\":0.00, \"total\":0.00, \"moneda\":\"...\", \"categoria\":\"...\"}]. " +
+                                        "CRÍTICO: Si un campo de texto no es visible, ponlo entre comillas como \"N/A\". Si un campo numérico como baseImponible o impuesto no es visible, pon 0.00 (NUNCA dejes texto suelto sin comillas).";
 
             const result = await model.generateContent([
                 {
@@ -58,13 +56,16 @@ module.exports = async function handler(req, res) {
             const response = await result.response;
             const textoIa = response.text();
             
-            // LAZO DE LIMPIEZA: Eliminamos marcas de Markdown ```json ... ``` si la IA las genera
-            const jsonLimpio = textoIa.replace(/```json/g, "").replace(/```/g, "").trim();
+            // 1. Limpieza estándar de bloques markdown
+            let jsonLimpio = textoIa.replace(/```json/g, "").replace(/```/g, "").trim();
             
-            // Parseamos el texto para convertirlo en un objeto nativo de JavaScript
+            // 2. FILTRO ANTI-FALLAS: Si la IA metió N/A sueltos sin comillas en los números, los corregimos a 0.00
+            jsonLimpio = jsonLimpio.replace(/:\s*N\/A/g, ': "N/A"'); // Pone comillas si quedó suelto en textos
+            jsonLimpio = jsonLimpio.replace(/:\s*([^"\d\[\{]\s*[^"\d\]\}]+)/g, ': 0.00'); // Si metió basura en los campos numéricos lo plancha a cero para que no rompa el JSON
+
+            // Parseamos de forma segura
             const listaFacturas = JSON.parse(jsonLimpio);
 
-            // Devolvemos el JSON estructurado directo al Frontend
             return res.status(200).json({ status: "SUCCESS", facturas: listaFacturas });
 
         } catch (error) {
