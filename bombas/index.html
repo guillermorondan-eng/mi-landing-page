@@ -36,11 +36,12 @@ label { font-size:10px;color:var(--text2);font-family:var(--font); }
 input[type="number"] { background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:11px;padding:6px 8px;flex:1;width:100%; }
 .unit { font-size:9px;color:var(--text3);font-family:var(--font);padding:0 7px;border-left:1px solid var(--border);white-space:nowrap; }
 .divider { height:1px;background:var(--border);margin:.5rem 0; }
-.table-header { display:grid;grid-template-columns:1fr 1fr 1fr 24px;gap:3px;margin-bottom:3px; }
+.table-header { display:grid;grid-template-columns:1fr 1fr 1fr 1fr 24px;gap:3px;margin-bottom:3px; }
 .table-header span { font-size:9px;color:var(--text3);font-family:var(--font);text-align:center;padding:2px;background:var(--bg3);border-radius:2px; }
-.table-row { display:grid;grid-template-columns:1fr 1fr 1fr 24px;gap:3px;align-items:center;margin-bottom:3px; }
+.table-row { display:grid;grid-template-columns:1fr 1fr 1fr 1fr 24px;gap:3px;align-items:center;margin-bottom:3px; }
 .table-row input { background:var(--bg3);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font);font-size:10px;padding:4px 5px;text-align:center;outline:none; }
 .table-row input:focus { border-color:var(--accent); }
+.hinst-cell { background:var(--bg3);border:1px solid rgba(63,185,80,0.3);border-radius:3px;color:#3fb950;font-family:var(--font);font-size:10px;padding:4px 5px;text-align:center; }
 .btn-remove { background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--text3);cursor:pointer;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px; }
 .btn-remove:hover { border-color:var(--red);color:var(--red); }
 .btn-add { background:transparent;border:1px dashed var(--border);border-radius:4px;color:var(--text3);cursor:pointer;padding:5px;font-size:10px;font-family:var(--font2);display:flex;align-items:center;justify-content:center;gap:4px;margin-top:3px; }
@@ -104,7 +105,7 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
     <div>
       <div class="section-title"><i class="ti ti-table"></i> Curva de la bomba</div>
       <div class="table-header">
-        <span>Q (m³/h)</span><span>H (m)</span><span>η (%)</span><span></span>
+        <span>Q (m³/h)</span><span>H (m)</span><span>η (%)</span><span style="color:#3fb950">H inst</span><span></span>
       </div>
       <div id="tabla-bomba"></div>
       <button class="btn-add" onclick="agregarFila()">
@@ -156,6 +157,7 @@ function agregarFila(q='',h='',e='') {
     <input type="number" value="${q}" step="0.1" placeholder="0.0" oninput="actualizarGrafica()">
     <input type="number" value="${h}" step="0.1" placeholder="0.0" oninput="actualizarGrafica()">
     <input type="number" value="${e}" step="1" placeholder="0">
+    <span class="hinst-cell">—</span>
     <button class="btn-remove" onclick="this.parentElement.remove();actualizarGrafica()" aria-label="Eliminar">
       <i class="ti ti-x" aria-hidden="true"></i>
     </button>`;
@@ -253,11 +255,11 @@ function dibujarCroquis(hg, perdida, qOp, hOp, calculado) {
   <circle cx="${bX}" cy="${bY-18}" r="18" fill="#161b22" stroke="#388bfd" stroke-width="2"/>
   <polygon points="${bX-7},${bY-18} ${bX+4},${bY-26} ${bX+4},${bY-10}" fill="#388bfd"/>
   <text x="${bX}" y="${bY+6}" text-anchor="middle" fill="#6e7681" font-size="8">B</text>
-  <line x1="${tiX+tW}" y1="${tiY-16}" x2="${bX-18}" y2="${bY-18}" stroke="#388bfd" stroke-width="${stroke}" stroke-linecap="round" marker-end="url(#ma)"/>
-  <text x="${(tiX+tW+bX)/2}" y="${tiY-20}" text-anchor="middle" fill="#388bfd" font-size="7">succión</text>
+  <polyline points="${tiX+tW},${tiY} ${bX-18},${tiY} ${bX-18},${bY-18}" fill="none" stroke="#388bfd" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ma)"/>
+  <text x="${(tiX+tW+bX)/2}" y="${tiY-4}" text-anchor="middle" fill="#388bfd" font-size="7">succión</text>
+  <text x="${(tiX+tW+bX)/2}" y="${tiY+10}" text-anchor="middle" fill="#388bfd" font-size="8" font-weight="700">${qLabel}</text>
   <polyline points="${bX+18},${bY-18} ${bX+18},${tsY-16} ${tsX},${tsY-16}" fill="none" stroke="#3fb950" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#mg)"/>
   <text x="${bX+28}" y="${(bY+tsY)/2-10}" fill="#3fb950" font-size="7">impulsión</text>
-  <text x="${(tiX+tW+bX)/2}" y="${tiY-6}" text-anchor="middle" fill="#388bfd" font-size="8" font-weight="700">${qLabel}</text>
   <text x="${bX+28}" y="${bY-50}" fill="${calculado ? '#d29922' : '#6e7681'}" font-size="8">${hmLabel}</text>
   ${calculado ? `<text x="${bX+28}" y="${bY-40}" fill="#f85149" font-size="8">ΔH=${perdida.toFixed(1)}m</text>` : ''}
 </svg>`;
@@ -363,6 +365,16 @@ function calcular() {
   calculadoFlag = true;
   actualizarCroquis(hg, perdida, qOp, hOp, true);
   actualizarGrafica();
+
+  // Rellenar columna H instalación en cada fila
+  const filas = document.querySelectorAll('#tabla-bomba .table-row');
+  filas.forEach(f => {
+    const q = parseFloat(f.querySelectorAll('input')[0].value);
+    if (!isNaN(q)) {
+      const hInst = hg + perdida * Math.pow(q / qReq, 2);
+      f.querySelector('.hinst-cell').textContent = hInst.toFixed(1);
+    }
+  });
 
   document.getElementById('bottom').innerHTML = `
     <div class="kpi-grid">
