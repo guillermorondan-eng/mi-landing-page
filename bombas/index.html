@@ -154,11 +154,11 @@ function agregarFila(q='',h='',e='') {
   const div = document.createElement('div');
   div.className = 'table-row';
   div.innerHTML = `
-    <input type="number" value="${q}" step="0.1" placeholder="0.0" oninput="actualizarGrafica()">
-    <input type="number" value="${h}" step="0.1" placeholder="0.0" oninput="actualizarGrafica()">
+    <input type="number" value="${q}" step="0.1" placeholder="0.0" oninput="actualizarGrafica(null)">
+    <input type="number" value="${h}" step="0.1" placeholder="0.0" oninput="actualizarGrafica(null)">
     <input type="number" value="${e}" step="1" placeholder="0">
     <span class="hinst-cell">—</span>
-    <button class="btn-remove" onclick="this.parentElement.remove();actualizarGrafica()" aria-label="Eliminar">
+    <button class="btn-remove" onclick="this.parentElement.remove();actualizarGrafica(null)" aria-label="Eliminar">
       <i class="ti ti-x" aria-hidden="true"></i>
     </button>`;
   cont.appendChild(div);
@@ -448,8 +448,6 @@ function calcular() {
     </div>
   `;
 }
-
-datosIniciales.forEach(d => agregarFila(d.q, d.h, d.e));
 
 const hg0 = parseFloat(document.getElementById('hg').value);
 const p0 = parseFloat(document.getElementById('perdida').value);
