@@ -353,8 +353,17 @@ function calcular() {
   const etaOp = interpolarEta(puntos, qOp);
   const hInsOp = hg + perdida * Math.pow(qOp/qReq, 2);
   const hReq = hg + perdida;
-  const hBombaEnQReq = interpolar(puntos, qReq);
-  const rpmNecesaria = rpmRef * Math.sqrt(hReq / hBombaEnQReq);
+  // Punto homólogo P: intersección parábola H=K·Q² con curva de la bomba
+  const K = hReq / (qReq * qReq);
+  let qP = puntos[0].q, hP = interpolar(puntos, puntos[0].q);
+  let bestDiffP = Math.abs(hP - K * qP * qP);
+  for (let i = 1; i <= 5000; i++) {
+    const q = (i/5000) * puntos[puntos.length-1].q;
+    const hBomba = interpolar(puntos, q);
+    const diff = Math.abs(hBomba - K * q * q);
+    if (diff < bestDiffP) { bestDiffP = diff; qP = q; hP = hBomba; }
+  }
+  const rpmNecesaria = rpmRef * Math.sqrt(hReq / hP);
   const gamma = 9810;
   // Q en m³/h → convertir a m³/s para potencia
   const qMs = qOp / 3600;
