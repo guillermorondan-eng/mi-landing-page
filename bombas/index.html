@@ -551,6 +551,40 @@ function dibujarCroquis(hg, K, qLabel, calculado, config) {
   }
 
   svg+='<text x="'+(bX+28)+'" y="'+(bY-50)+'" fill="'+(calculado?'#d29922':'#6e7681')+'" font-size="8">'+hmTxt+'</text>';
+
+  // Pipe labels from K panel
+  var ks_diam = document.getElementById('ks-diam') ? document.getElementById('ks-diam').value : '';
+  var ki_diam = document.getElementById('ki-diam') ? document.getElementById('ki-diam').value : '';
+  var ks_mat_el = document.getElementById('ks-mat');
+  var ki_mat_el = document.getElementById('ki-mat');
+  var matNames = {'0.046':'Ac. comercial','0.15':'H. galvanizado','0.26':'H. fundido','0.0015':'PVC','0.003':'Polietileno','1.0':'Hormigón'};
+  var ks_mat = ks_mat_el ? (matNames[ks_mat_el.value]||'') : '';
+  var ki_mat = ki_mat_el ? (matNames[ki_mat_el.value]||'') : '';
+
+  var ks_long = document.getElementById('ks-long') ? document.getElementById('ks-long').value : '';
+  var ki_long = document.getElementById('ki-long') ? document.getElementById('ki-long').value : '';
+
+  if (ks_diam && config!=='paralelo') {
+    // Arrow above tanque inferior pointing up
+    var sx = tiX + tW/2;
+    var sy = tiY - tH - 8;
+    // Labels above arrow tip, centered, no overlap
+    if (ks_mat) svg += '<text x="'+sx+'" y="'+(sy-58)+'" text-anchor="middle" fill="#388bfd" font-size="6">'+ks_mat+'</text>';
+    svg += '<text x="'+sx+'" y="'+(sy-48)+'" text-anchor="middle" fill="#388bfd" font-size="7">ø'+ks_diam+'mm</text>';
+    if (ks_long) svg += '<text x="'+sx+'" y="'+(sy-38)+'" text-anchor="middle" fill="#388bfd" font-size="6">L='+ks_long+'m</text>';
+    svg += '<line x1="'+sx+'" y1="'+(sy-30)+'" x2="'+sx+'" y2="'+(sy-4)+'" stroke="#388bfd" stroke-width="0.8" marker-end="url(#ma)"/>';
+  }
+
+  if (ki_diam) {
+    // Arrow pointing to impulsion pipe
+    var ix = bX + 28;
+    var iy = (bY + tsY) / 2;
+    svg += '<line x1="'+(ix+38)+'" y1="'+iy+'" x2="'+(bX+24)+'" y2="'+iy+'" stroke="#3fb950" stroke-width="0.8" marker-end="url(#mg)"/>';
+    if (ki_mat) svg += '<text x="'+(ix+42)+'" y="'+(iy-14)+'" fill="#3fb950" font-size="6">'+ki_mat+'</text>';
+    svg += '<text x="'+(ix+42)+'" y="'+(iy-5)+'" fill="#3fb950" font-size="7">ø'+ki_diam+'mm</text>';
+    if (ki_long) svg += '<text x="'+(ix+42)+'" y="'+(iy+4)+'" fill="#3fb950" font-size="6">L='+ki_long+'m</text>';
+  }
+
   svg+='</svg>';
   return svg;
 }
@@ -814,13 +848,20 @@ function calcularK() {
   document.getElementById('ki-result').innerHTML =
     'fi='+r.fi.toFixed(5)+' Vi='+r.Vi.toFixed(3)+' m/s Re_i='+r.Re_i.toFixed(0)+' ΣLe/D='+r.leD_i.toFixed(0)+' Ki='+r.Ki.toExponential(3);
 
+  var Ktotal = r.Ktotal;
   var res = document.getElementById('k-result');
   res.style.display = 'block';
   res.innerHTML =
     '<div style="margin-bottom:4px;">Ks = '+r.Ks.toExponential(4)+' &nbsp;+&nbsp; Ki = '+r.Ki.toExponential(4)+'</div>' +
     '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">K total = '+r.Ktotal.toExponential(4)+' m/(m³/h)²</div>' +
-    '<div style="font-size:10px;color:var(--text2);">Q estimado (V en impulsión): '+r.Qi.toFixed(1)+' m³/h</div>' +
-    t;
+    '<div style="font-size:10px;color:var(--text2);margin-bottom:8px;">Q estimado (V en impulsión): '+r.Qi.toFixed(1)+' m³/h</div>' +
+    t +
+    '<button onclick="cargarKSugerido('+r.Ktotal+')" style="margin-top:10px;width:100%;background:var(--yellow);border:none;border-radius:5px;color:#0d1117;cursor:pointer;padding:8px;font-size:11px;font-weight:700;font-family:var(--font2);">&#8595; Cargar K sugerido en instalación</button>';
+
+  // Actualizar croquis con etiquetas de tuberías
+  var hg = parseFloat(document.getElementById('hg').value)||0;
+  var K = parseFloat(document.getElementById('perdida').value)||0;
+  document.getElementById('croquis-area').innerHTML = dibujarCroquis(hg, K, '', false, CONFIG);
 }
 
 // ===== CATÁLOGO KSB MEGANORM =====
@@ -859,6 +900,15 @@ var catalogo_KSB = [
    Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000,2200],H:[50,49,47,45,42,38,34,29,23,17,10,4],eta:[null,null,null,null,82,84,85,86,85,84,82,null]}
 ];
 
+function cargarKSugerido(k) {
+  document.getElementById('perdida').value = k.toExponential(6);
+  // Flash the field to show it was updated
+  var el = document.getElementById('perdida');
+  el.style.borderColor = '#d29922';
+  el.style.background = 'rgba(210,153,34,0.1)';
+  setTimeout(function(){ el.style.borderColor=''; el.style.background=''; }, 1500);
+}
+
 function poblarSelectores() {
   var opts = '<option value="">— Standard (manual) —</option>';
   for (var i=0; i<catalogo_KSB.length; i++) {
@@ -894,6 +944,22 @@ function cargarDesdeCatalogo(tablaId, selectorId, infoId) {
 
   // Actualizar RPM referencia
   document.getElementById('rpm_ref').value = b.rpm;
+
+  // Cargar diámetros en panel K — buscar opción más cercana
+  if (tablaId === 'tabla-bomba1') {
+    function setClosestOption(selectEl, targetMm) {
+      if (!selectEl) return;
+      var opts = selectEl.options;
+      var bestIdx = 0, bestDiff = Infinity;
+      for (var j=0; j<opts.length; j++) {
+        var diff = Math.abs(parseFloat(opts[j].value) - targetMm);
+        if (diff < bestDiff) { bestDiff = diff; bestIdx = j; }
+      }
+      selectEl.selectedIndex = bestIdx;
+    }
+    setClosestOption(document.getElementById('ks-diam'), b.DN_succion_mm);
+    setClosestOption(document.getElementById('ki-diam'), b.DN_impulsion_mm);
+  }
 
   graficarBase();
 }
