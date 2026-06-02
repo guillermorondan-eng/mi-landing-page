@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calculadora de Bombas Hidráulicas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
@@ -24,7 +26,7 @@ header h1 { font-size:14px;font-weight:600;color:var(--text); }
 header span { font-size:10px;color:var(--text3);font-family:var(--font);background:var(--bg3);padding:2px 6px;border-radius:3px;border:1px solid var(--border); }
 .main { display:grid; grid-template-columns:300px 1fr 1fr; flex:1; overflow:hidden; border-bottom:1px solid var(--border); }
 .col { display:flex; flex-direction:column; overflow:hidden; }
-.col-left { background:var(--bg2); border-right:1px solid var(--border); overflow-y:auto; padding:1rem; gap:1rem; display:flex; flex-direction:column; }
+.col-left { background:var(--bg2); border-right:1px solid var(--border); overflow-y:auto; padding:1rem; gap:.75rem; display:flex; flex-direction:column; }
 .col-mid { border-right:1px solid var(--border); padding:.75rem; display:flex; flex-direction:column; }
 .col-right { padding:.75rem; display:flex; flex-direction:column; }
 .bottom { background:var(--bg); padding:.75rem 1rem; flex-shrink:0; border-top:1px solid var(--border); }
@@ -35,7 +37,7 @@ label { font-size:10px;color:var(--text2);font-family:var(--font); }
 .input-row:focus-within { border-color:var(--accent); }
 input[type="number"] { background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:11px;padding:6px 8px;flex:1;width:100%; }
 .unit { font-size:9px;color:var(--text3);font-family:var(--font);padding:0 7px;border-left:1px solid var(--border);white-space:nowrap; }
-.divider { height:1px;background:var(--border);margin:.5rem 0; }
+.divider { height:1px;background:var(--border);margin:.25rem 0; }
 .table-header { display:grid;grid-template-columns:1fr 1fr 1fr 1fr 24px;gap:3px;margin-bottom:3px; }
 .table-header span { font-size:9px;color:var(--text3);font-family:var(--font);text-align:center;padding:2px;background:var(--bg3);border-radius:2px; }
 .table-row { display:grid;grid-template-columns:1fr 1fr 1fr 1fr 24px;gap:3px;align-items:center;margin-bottom:3px; }
@@ -67,6 +69,12 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
 .kpi-card.ye .kpi-value { color:var(--yellow); }
 .kpi-card.re { border-color:rgba(248,81,73,.3); }
 .kpi-card.re .kpi-value { color:var(--red); }
+.config-btns { display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:.5rem; }
+.cfg-btn { background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text2);cursor:pointer;padding:6px 4px;font-size:10px;font-family:var(--font2);text-align:center;transition:all .2s; }
+.cfg-btn:hover { border-color:var(--accent2);color:var(--accent2); }
+.cfg-btn.active { background:var(--accent);border-color:var(--accent);color:white;font-weight:600; }
+.bomba2-section { display:none; }
+.bomba2-section.visible { display:block; }
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-thumb { background:var(--border2);border-radius:2px; }
 </style>
@@ -86,11 +94,11 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
         <div class="input-row"><input type="number" id="hg" value="20" step="0.1" min="0"><span class="unit">m</span></div>
       </div>
       <div class="field">
-        <label>Pérdida de carga</label>
-        <div class="input-row"><input type="number" id="perdida" value="15" step="0.1" min="0"><span class="unit">m</span></div>
+        <label>K pérdida de carga &nbsp;<span style="color:var(--text3);font-size:9px;">H = Hg + K·Q²</span></label>
+        <div class="input-row"><input type="number" id="perdida" value="0.000547" step="0.000001" min="0"><span class="unit">m/(m³/h)²</span></div>
       </div>
       <div class="field">
-        <label>Caudal de diseño (Q)</label>
+        <label>Caudal requerido (Q)</label>
         <div class="input-row"><input type="number" id="q_req" value="165.6" step="1" min="0"><span class="unit">m³/h</span></div>
       </div>
       <div class="field">
@@ -100,21 +108,40 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
     </div>
     <div class="divider"></div>
     <div>
-      <div class="section-title"><i class="ti ti-table"></i> Curva de la bomba</div>
+      <div class="section-title"><i class="ti ti-settings"></i> Configuración</div>
+      <div class="config-btns">
+        <button class="cfg-btn active" onclick="setConfig('1')" id="btn1">1 Bomba</button>
+        <button class="cfg-btn" onclick="setConfig('serie')" id="btnSerie">2 Serie</button>
+        <button class="cfg-btn" onclick="setConfig('paralelo')" id="btnParalelo">2 Paralelo</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-title"><i class="ti ti-table"></i> Curva Bomba 1</div>
       <div class="table-header">
         <span>Q (m³/h)</span><span>H (m)</span><span>η (%)</span><span style="color:#3fb950">H inst</span><span></span>
       </div>
-      <div id="tabla-bomba"></div>
-      <button class="btn-add" onclick="agregarFila()"><i class="ti ti-plus" aria-hidden="true"></i> Agregar punto</button>
+      <div id="tabla-bomba1"></div>
+      <button class="btn-add" onclick="agregarFila('tabla-bomba1')"><i class="ti ti-plus"></i> Agregar punto</button>
     </div>
-    <button class="btn-calc" onclick="calcular()"><i class="ti ti-bolt" aria-hidden="true"></i> Calcular</button>
+    <div class="divider"></div>
+    <div class="bomba2-section" id="bomba2-section">
+      <div class="section-title"><i class="ti ti-table"></i> Curva Bomba 2</div>
+      <div class="table-header">
+        <span>Q (m³/h)</span><span>H (m)</span><span>η (%)</span><span></span><span></span>
+      </div>
+      <div id="tabla-bomba2"></div>
+      <button class="btn-add" onclick="agregarFila('tabla-bomba2')"><i class="ti ti-plus"></i> Agregar punto</button>
+      <div class="divider"></div>
+    </div>
+    <button class="btn-calc" onclick="calcular()"><i class="ti ti-bolt"></i> Calcular</button>
   </div>
   <div class="col col-mid">
     <div class="col-title"><i class="ti ti-topology-star"></i> Esquema de la instalación</div>
     <div class="croquis-area" id="croquis-area"></div>
   </div>
   <div class="col col-right">
-    <div class="col-title"><i class="ti ti-chart-line"></i> Curvas Q-H</div>
+    <div class="col-title"><i class="ti ti-chart-line"></i> Curvas Q-H <button onclick="if(chartH)chartH.resetZoom()" style="margin-left:auto;background:transparent;border:1px solid rgba(99,110,123,0.3);border-radius:4px;color:#8b949e;cursor:pointer;padding:2px 8px;font-size:9px;font-family:monospace;">Reset zoom</button></div>
     <div class="chart-area"><canvas id="chartH"></canvas></div>
   </div>
 </div>
@@ -122,20 +149,34 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
   <div style="display:flex;align-items:center;justify-content:center;height:50px;color:var(--text3);font-size:11px;font-family:var(--font);">Ingresá los datos y presioná Calcular</div>
 </div>
 <script>
+var CONFIG = '1';
+
 var datosIniciales = [
   {q:22.7,h:29.6,e:40},{q:45.4,h:28.7,e:62},{q:68.1,h:26.2,e:78},
   {q:90.8,h:22.9,e:84},{q:113.6,h:19.5,e:77},{q:136.3,h:14.3,e:62},{q:159.0,h:9.1,e:40}
 ];
 
-function agregarFila(q,h,e) {
+function setConfig(c) {
+  CONFIG = c;
+  document.getElementById('btn1').className = 'cfg-btn' + (c==='1'?' active':'');
+  document.getElementById('btnSerie').className = 'cfg-btn' + (c==='serie'?' active':'');
+  document.getElementById('btnParalelo').className = 'cfg-btn' + (c==='paralelo'?' active':'');
+  var b2 = document.getElementById('bomba2-section');
+  if (c==='1') { b2.className='bomba2-section'; }
+  else { b2.className='bomba2-section visible'; }
+  graficarBase();
+}
+
+function agregarFila(tablaId, q, h, e) {
   q = q===undefined?'':q; h = h===undefined?'':h; e = e===undefined?'':e;
-  var cont = document.getElementById('tabla-bomba');
+  var cont = document.getElementById(tablaId);
   var div = document.createElement('div');
   div.className = 'table-row';
+  var hinst = tablaId==='tabla-bomba1' ? '<span class="hinst-cell">—</span>' : '<span></span>';
   div.innerHTML = '<input type="number" value="'+q+'" step="0.1" placeholder="0.0">' +
     '<input type="number" value="'+h+'" step="0.1" placeholder="0.0">' +
     '<input type="number" value="'+e+'" step="1" placeholder="0">' +
-    '<span class="hinst-cell">—</span>' +
+    hinst +
     '<button class="btn-remove" onclick="this.parentElement.remove();graficarBase()" aria-label="Eliminar"><i class="ti ti-x"></i></button>';
   cont.appendChild(div);
   var inputs = div.querySelectorAll('input');
@@ -143,17 +184,20 @@ function agregarFila(q,h,e) {
   inputs[1].addEventListener('input', graficarBase);
 }
 
-for (var i=0; i<datosIniciales.length; i++) {
-  agregarFila(datosIniciales[i].q, datosIniciales[i].h, datosIniciales[i].e);
+function cargarTabla(tablaId, datos) {
+  for (var i=0; i<datos.length; i++) agregarFila(tablaId, datos[i].q, datos[i].h, datos[i].e);
 }
 
-function obtenerDatos() {
-  var filas = document.querySelectorAll('#tabla-bomba .table-row');
+cargarTabla('tabla-bomba1', datosIniciales);
+cargarTabla('tabla-bomba2', datosIniciales);
+
+function obtenerDatos(tablaId) {
+  var filas = document.querySelectorAll('#'+tablaId+' .table-row');
   var puntos = [];
   for (var i=0; i<filas.length; i++) {
     var inputs = filas[i].querySelectorAll('input');
     var q = parseFloat(inputs[0].value), h = parseFloat(inputs[1].value), e = parseFloat(inputs[2].value);
-    if (!isNaN(q) && !isNaN(h)) puntos.push({q:q, h:h, e:isNaN(e)?0:e});
+    if (!isNaN(q) && !isNaN(h)) puntos.push({q:q,h:h,e:isNaN(e)?0:e});
   }
   return puntos.sort(function(a,b){return a.q-b.q;});
 }
@@ -184,80 +228,171 @@ function interpolarEta(pts, q) {
   return 0;
 }
 
-function hallarPuntoHomologo(pts, hR, qR) {
-  var K = hR / (qR * qR);
-  var qP = pts[0].q, hP = pts[0].h, bestDiff = Math.abs(pts[0].h - K*pts[0].q*pts[0].q);
-  for (var i=1; i<=5000; i++) {
-    var q = (i/5000) * pts[pts.length-1].q;
-    var hBomba = interpolar(pts, q);
-    var diff = Math.abs(hBomba - K*q*q);
-    if (diff < bestDiff) { bestDiff=diff; qP=q; hP=hBomba; }
+function curvaEquivalente(p1, p2) {
+  // Serie: mismos Q, suma H
+  // Paralelo: misma H, suma Q — construimos puntos interpolando
+  var pts = [];
+  if (CONFIG === 'serie') {
+    for (var i=0; i<p1.length; i++) {
+      pts.push({q: p1[i].q, h: p1[i].h + interpolar(p2, p1[i].q), e: (p1[i].e+interpolarEta(p2,p1[i].q))/2});
+    }
+  } else if (CONFIG === 'paralelo') {
+    // Para cada H, suma los Q de ambas curvas
+    var hMin = Math.max(p1[p1.length-1].h, p2[p2.length-1].h);
+    var hMax = Math.min(p1[0].h, p2[0].h);
+    var steps = 30;
+    for (var i=0; i<=steps; i++) {
+      var h = hMin + (hMax-hMin)*(i/steps);
+      var q1 = qParaH(p1, h);
+      var q2 = qParaH(p2, h);
+      if (q1!==null && q2!==null) pts.push({q:q1+q2, h:h, e:0});
+    }
+    pts.sort(function(a,b){return a.q-b.q;});
   }
-  return {qP:qP, hP:hP};
+  return pts;
 }
 
-function dibujarCroquis(hg, perdida, qLabel, calculado) {
-  var W=400, H=260;
-  var escala = Math.min(140/Math.max(hg,1), 16);
-  var alturaPx = Math.min(hg*escala, 140);
-  var tW=55, tH=45, tiX=30, tiY=200, tsX=290;
-  var tsY = tiY - alturaPx;
-  var bX=170, bY=tiY-8;
-  var hTotal = (hg+perdida).toFixed(1);
-  var z1Y = tiY-15, z2Y = tsY-15;
-  var qTxt = calculado ? ('Q='+qLabel) : 'Q = ?';
-  var hmTxt = calculado ? ('Hm='+hTotal+'m') : ('Hg='+hg.toFixed(1)+'m');
-  var stroke = '3';
+function qParaH(pts, h) {
+  if (h > pts[0].h || h < pts[pts.length-1].h) return null;
+  for (var i=0; i<pts.length-1; i++) {
+    if (h <= pts[i].h && h >= pts[i+1].h) {
+      var t = (pts[i].h-h)/(pts[i].h-pts[i+1].h);
+      return pts[i].q + t*(pts[i+1].q-pts[i].q);
+    }
+  }
+  return null;
+}
 
-  return '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;font-family:monospace;">' +
-    '<defs>' +
-    '<marker id="ma" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3z" fill="#388bfd"/></marker>' +
-    '<marker id="mg" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3z" fill="#3fb950"/></marker>' +
-    '<marker id="my" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3z" fill="#d29922"/></marker>' +
-    '<marker id="myr" markerWidth="6" markerHeight="6" refX="2" refY="3" orient="auto-start-reverse"><path d="M0,3 L6,0 L6,6z" fill="#d29922"/></marker>' +
-    '</defs>' +
-    '<line x1="10" y1="'+(tiY+10)+'" x2="'+(W-10)+'" y2="'+(tiY+10)+'" stroke="#6e7681" stroke-width="1" stroke-dasharray="5,4"/>' +
-    '<text x="12" y="'+(tiY+22)+'" fill="#6e7681" font-size="7">z = 0</text>' +
-    '<line x1="'+(tiX-10)+'" y1="'+(tiY+10)+'" x2="'+(tiX-10)+'" y2="'+z1Y+'" stroke="#388bfd" stroke-width="1" stroke-dasharray="3,3"/>' +
-    '<line x1="'+(tiX-15)+'" y1="'+z1Y+'" x2="'+(tiX-5)+'" y2="'+z1Y+'" stroke="#388bfd" stroke-width="1.2"/>' +
-    '<text x="'+(tiX-22)+'" y="'+((tiY+10+z1Y)/2+3)+'" fill="#388bfd" font-size="9" font-style="italic">z\u2081</text>' +
-    '<line x1="'+(tsX+tW+10)+'" y1="'+(tiY+10)+'" x2="'+(tsX+tW+10)+'" y2="'+z2Y+'" stroke="#3fb950" stroke-width="1" stroke-dasharray="3,3"/>' +
-    '<line x1="'+(tsX+tW+5)+'" y1="'+z2Y+'" x2="'+(tsX+tW+15)+'" y2="'+z2Y+'" stroke="#3fb950" stroke-width="1.2"/>' +
-    '<text x="'+(tsX+tW+18)+'" y="'+(z2Y+3)+'" fill="#3fb950" font-size="9" font-style="italic">z\u2082</text>' +
-    '<line x1="'+(tsX+tW+28)+'" y1="'+z1Y+'" x2="'+(tsX+tW+28)+'" y2="'+z2Y+'" stroke="#d29922" stroke-width="1.5" marker-start="url(#myr)" marker-end="url(#my)"/>' +
-    '<text x="'+(tsX+tW+34)+'" y="'+((z1Y+z2Y)/2+3)+'" fill="#d29922" font-size="8">Hg='+hg.toFixed(1)+'m</text>' +
-    '<rect x="'+tiX+'" y="'+(tiY-tH)+'" width="'+tW+'" height="'+tH+'" fill="rgba(56,139,253,0.07)" stroke="#388bfd" stroke-width="1.5" rx="3"/>' +
-    '<rect x="'+(tiX+3)+'" y="'+(tiY-tH+8)+'" width="'+(tW-6)+'" height="11" fill="rgba(56,139,253,0.2)" rx="2"/>' +
-    '<text x="'+(tiX+tW/2)+'" y="'+(tiY+18)+'" text-anchor="middle" fill="#6e7681" font-size="8">Tanque inf.</text>' +
-    '<text x="'+(tiX+tW/2)+'" y="'+(tiY-tH/2+4)+'" text-anchor="middle" fill="#388bfd" font-size="11">\u2248</text>' +
-    '<rect x="'+tsX+'" y="'+(tsY-tH)+'" width="'+tW+'" height="'+tH+'" fill="rgba(63,185,80,0.07)" stroke="#3fb950" stroke-width="1.5" rx="3"/>' +
-    '<rect x="'+(tsX+3)+'" y="'+(tsY-tH+8)+'" width="'+(tW-6)+'" height="11" fill="rgba(63,185,80,0.2)" rx="2"/>' +
-    '<text x="'+(tsX+tW/2)+'" y="'+(tsY+18)+'" text-anchor="middle" fill="#6e7681" font-size="8">Tanque sup.</text>' +
-    '<text x="'+(tsX+tW/2)+'" y="'+(tsY-tH/2+4)+'" text-anchor="middle" fill="#3fb950" font-size="11">\u2248</text>' +
-    '<circle cx="'+bX+'" cy="'+(bY-18)+'" r="18" fill="#161b22" stroke="#388bfd" stroke-width="2"/>' +
-    '<polygon points="'+(bX-7)+','+(bY-18)+' '+(bX+4)+','+(bY-26)+' '+(bX+4)+','+(bY-10)+'" fill="#388bfd"/>' +
-    '<text x="'+bX+'" y="'+(bY+6)+'" text-anchor="middle" fill="#6e7681" font-size="8">B</text>' +
-    '<polyline points="'+(tiX+tW)+','+tiY+' '+(bX-18)+','+tiY+' '+(bX-18)+','+(bY-18)+'" fill="none" stroke="#388bfd" stroke-width="'+stroke+'" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ma)"/>' +
-    '<text x="'+((tiX+tW+bX)/2)+'" y="'+(tiY-4)+'" text-anchor="middle" fill="#388bfd" font-size="7">succi\u00f3n</text>' +
-    '<text x="'+((tiX+tW+bX)/2)+'" y="'+(tiY+10)+'" text-anchor="middle" fill="#388bfd" font-size="8" font-weight="700">'+qTxt+'</text>' +
-    '<polyline points="'+(bX+18)+','+(bY-18)+' '+(bX+18)+','+(tsY-16)+' '+tsX+','+(tsY-16)+'" fill="none" stroke="#3fb950" stroke-width="'+stroke+'" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#mg)"/>' +
-    '<text x="'+(bX+28)+'" y="'+((bY+tsY)/2-10)+'" fill="#3fb950" font-size="7">impulsi\u00f3n</text>' +
-    '<text x="'+(bX+28)+'" y="'+(bY-50)+'" fill="'+(calculado?'#d29922':'#6e7681')+'" font-size="8">'+hmTxt+'</text>' +
-    (calculado ? '<text x="'+(bX+28)+'" y="'+(bY-40)+'" fill="#f85149" font-size="8">\u0394H='+perdida.toFixed(1)+'m</text>' : '') +
-    '</svg>';
+function hallarPuntoHomologo(pts, hR, qR) {
+  var K = hR/(qR*qR);
+  var qP=pts[0].q, hP=pts[0].h, bestDiff=Math.abs(pts[0].h-K*pts[0].q*pts[0].q);
+  for (var i=1; i<=5000; i++) {
+    var q=(i/5000)*pts[pts.length-1].q;
+    var hB=interpolar(pts,q);
+    var diff=Math.abs(hB-K*q*q);
+    if (diff<bestDiff){bestDiff=diff;qP=q;hP=hB;}
+  }
+  return {qP:qP,hP:hP};
+}
+
+function dibujarCroquis(hg, K, qLabel, calculado, config) {
+  var W=400, H=260;
+  var escala=Math.min(140/Math.max(hg,1),16);
+  var alturaPx=Math.min(hg*escala,140);
+  var tW=55,tH=45,tiX=30,tiY=200,tsX=290;
+  var tsY=tiY-alturaPx;
+  var bX=config==='1'?170:150, bY=tiY-8;
+  var hTotal=(hg+K*165.6*165.6).toFixed(1);
+  var z1Y=tiY-15,z2Y=tsY-15;
+  var qTxt=calculado?('Q='+qLabel):'Q = ?';
+  var hmTxt=calculado?('Hm='+hTotal+'m'):('Hg='+hg.toFixed(1)+'m');
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;font-family:monospace;">';
+  svg+='<defs>';
+  svg+='<marker id="ma" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3z" fill="#388bfd"/></marker>';
+  svg+='<marker id="mg" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3z" fill="#3fb950"/></marker>';
+  svg+='<marker id="my" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3z" fill="#d29922"/></marker>';
+  svg+='<marker id="myr" markerWidth="6" markerHeight="6" refX="2" refY="3" orient="auto-start-reverse"><path d="M0,3 L6,0 L6,6z" fill="#d29922"/></marker>';
+  svg+='</defs>';
+  svg+='<line x1="10" y1="'+(tiY+10)+'" x2="'+(W-10)+'" y2="'+(tiY+10)+'" stroke="#6e7681" stroke-width="1" stroke-dasharray="5,4"/>';
+  svg+='<text x="12" y="'+(tiY+22)+'" fill="#6e7681" font-size="7">z = 0</text>';
+  svg+='<line x1="'+(tiX-10)+'" y1="'+(tiY+10)+'" x2="'+(tiX-10)+'" y2="'+z1Y+'" stroke="#388bfd" stroke-width="1" stroke-dasharray="3,3"/>';
+  svg+='<line x1="'+(tiX-15)+'" y1="'+z1Y+'" x2="'+(tiX-5)+'" y2="'+z1Y+'" stroke="#388bfd" stroke-width="1.2"/>';
+  svg+='<text x="'+(tiX-22)+'" y="'+((tiY+10+z1Y)/2+3)+'" fill="#388bfd" font-size="9" font-style="italic">z\u2081</text>';
+  svg+='<line x1="'+(tsX+tW+10)+'" y1="'+(tiY+10)+'" x2="'+(tsX+tW+10)+'" y2="'+z2Y+'" stroke="#3fb950" stroke-width="1" stroke-dasharray="3,3"/>';
+  svg+='<line x1="'+(tsX+tW+5)+'" y1="'+z2Y+'" x2="'+(tsX+tW+15)+'" y2="'+z2Y+'" stroke="#3fb950" stroke-width="1.2"/>';
+  svg+='<text x="'+(tsX+tW+18)+'" y="'+(z2Y+3)+'" fill="#3fb950" font-size="9" font-style="italic">z\u2082</text>';
+  svg+='<line x1="'+(tsX+tW+28)+'" y1="'+z1Y+'" x2="'+(tsX+tW+28)+'" y2="'+z2Y+'" stroke="#d29922" stroke-width="1.5" marker-start="url(#myr)" marker-end="url(#my)"/>';
+  svg+='<text x="'+(tsX+tW+34)+'" y="'+((z1Y+z2Y)/2+3)+'" fill="#d29922" font-size="8">Hg='+hg.toFixed(1)+'m</text>';
+  svg+='<rect x="'+tiX+'" y="'+(tiY-tH)+'" width="'+tW+'" height="'+tH+'" fill="rgba(56,139,253,0.07)" stroke="#388bfd" stroke-width="1.5" rx="3"/>';
+  svg+='<rect x="'+(tiX+3)+'" y="'+(tiY-tH+8)+'" width="'+(tW-6)+'" height="11" fill="rgba(56,139,253,0.2)" rx="2"/>';
+  svg+='<text x="'+(tiX+tW/2)+'" y="'+(tiY+18)+'" text-anchor="middle" fill="#6e7681" font-size="8">Tanque inf.</text>';
+  svg+='<text x="'+(tiX+tW/2)+'" y="'+(tiY-tH/2+4)+'" text-anchor="middle" fill="#388bfd" font-size="11">\u2248</text>';
+  svg+='<rect x="'+tsX+'" y="'+(tsY-tH)+'" width="'+tW+'" height="'+tH+'" fill="rgba(63,185,80,0.07)" stroke="#3fb950" stroke-width="1.5" rx="3"/>';
+  svg+='<rect x="'+(tsX+3)+'" y="'+(tsY-tH+8)+'" width="'+(tW-6)+'" height="11" fill="rgba(63,185,80,0.2)" rx="2"/>';
+  svg+='<text x="'+(tsX+tW/2)+'" y="'+(tsY+18)+'" text-anchor="middle" fill="#6e7681" font-size="8">Tanque sup.</text>';
+  svg+='<text x="'+(tsX+tW/2)+'" y="'+(tsY-tH/2+4)+'" text-anchor="middle" fill="#3fb950" font-size="11">\u2248</text>';
+
+  if (config==='serie') {
+    // Dos bombas en línea
+    var b1X=130, b2X=210;
+    svg+=bombaSVG(b1X, bY, '1');
+    svg+=bombaSVG(b2X, bY, '2');
+    svg+='<polyline points="'+(tiX+tW)+','+tiY+' '+(b1X-18)+','+tiY+' '+(b1X-18)+','+(bY-18)+'" fill="none" stroke="#388bfd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ma)"/>';
+    svg+='<line x1="'+(b1X+18)+'" y1="'+(bY-18)+'" x2="'+(b2X-18)+'" y2="'+(bY-18)+'" stroke="#388bfd" stroke-width="3" stroke-linecap="round" marker-end="url(#ma)"/>';
+    svg+='<polyline points="'+(b2X+18)+','+(bY-18)+' '+(b2X+18)+','+(tsY-16)+' '+tsX+','+(tsY-16)+'" fill="none" stroke="#3fb950" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#mg)"/>';
+    svg+='<text x="'+(tiX+tW+20)+'" y="'+(tiY+10)+'" fill="#388bfd" font-size="8" font-weight="700">'+qTxt+'</text>';
+  } else if (config==='paralelo') {
+    // Dos bombas en paralelo
+    var b1X=190, b1Yp=bY-30, b2Yp=bY+10;
+    svg+=bombaSVG(b1X, b1Yp, '1');
+    svg+=bombaSVG(b1X, b2Yp, '2');
+    // Succión
+    svg+='<line x1="'+(tiX+tW)+'" y1="'+tiY+'" x2="'+(b1X-40)+'" y2="'+tiY+'" stroke="#388bfd" stroke-width="3" stroke-linecap="round"/>';
+    svg+='<line x1="'+(b1X-40)+'" y1="'+tiY+'" x2="'+(b1X-40)+'" y2="'+(b1Yp-18)+'" stroke="#388bfd" stroke-width="3" stroke-linecap="round"/>';
+    svg+='<line x1="'+(b1X-40)+'" y1="'+tiY+'" x2="'+(b1X-40)+'" y2="'+(b2Yp-18)+'" stroke="#388bfd" stroke-width="3" stroke-linecap="round"/>';
+    svg+='<line x1="'+(b1X-40)+'" y1="'+(b1Yp-18)+'" x2="'+(b1X-18)+'" y2="'+(b1Yp-18)+'" stroke="#388bfd" stroke-width="3" stroke-linecap="round" marker-end="url(#ma)"/>';
+    svg+='<line x1="'+(b1X-40)+'" y1="'+(b2Yp-18)+'" x2="'+(b1X-18)+'" y2="'+(b2Yp-18)+'" stroke="#388bfd" stroke-width="3" stroke-linecap="round" marker-end="url(#ma)"/>';
+    // Impulsión
+    svg+='<line x1="'+(b1X+18)+'" y1="'+(b1Yp-18)+'" x2="'+(b1X+50)+'" y2="'+(b1Yp-18)+'" stroke="#3fb950" stroke-width="3" stroke-linecap="round"/>';
+    svg+='<line x1="'+(b1X+18)+'" y1="'+(b2Yp-18)+'" x2="'+(b1X+50)+'" y2="'+(b2Yp-18)+'" stroke="#3fb950" stroke-width="3" stroke-linecap="round"/>';
+    svg+='<line x1="'+(b1X+50)+'" y1="'+(b1Yp-18)+'" x2="'+(b1X+50)+'" y2="'+(b2Yp-18)+'" stroke="#3fb950" stroke-width="3" stroke-linecap="round"/>';
+    svg+='<polyline points="'+(b1X+50)+','+(tiY-18)+' '+(b1X+50)+','+(tsY-16)+' '+tsX+','+(tsY-16)+'" fill="none" stroke="#3fb950" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#mg)"/>';
+    svg+='<text x="'+(tiX+tW+20)+'" y="'+(tiY+10)+'" fill="#388bfd" font-size="8" font-weight="700">'+qTxt+'</text>';
+  } else {
+    // 1 bomba
+    svg+=bombaSVG(bX, bY, '');
+    svg+='<polyline points="'+(tiX+tW)+','+tiY+' '+(bX-18)+','+tiY+' '+(bX-18)+','+(bY-18)+'" fill="none" stroke="#388bfd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#ma)"/>';
+    svg+='<text x="'+((tiX+tW+bX)/2)+'" y="'+(tiY-4)+'" text-anchor="middle" fill="#388bfd" font-size="7">succi\u00f3n</text>';
+    svg+='<text x="'+((tiX+tW+bX)/2)+'" y="'+(tiY+10)+'" text-anchor="middle" fill="#388bfd" font-size="8" font-weight="700">'+qTxt+'</text>';
+    svg+='<polyline points="'+(bX+18)+','+(bY-18)+' '+(bX+18)+','+(tsY-16)+' '+tsX+','+(tsY-16)+'" fill="none" stroke="#3fb950" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#mg)"/>';
+    svg+='<text x="'+(bX+28)+'" y="'+((bY+tsY)/2-10)+'" fill="#3fb950" font-size="7">impulsi\u00f3n</text>';
+  }
+
+  svg+='<text x="'+(bX+28)+'" y="'+(bY-50)+'" fill="'+(calculado?'#d29922':'#6e7681')+'" font-size="8">'+hmTxt+'</text>';
+  svg+='</svg>';
+  return svg;
+}
+
+function bombaSVG(cx, cy, label) {
+  var s='';
+  s+='<circle cx="'+cx+'" cy="'+(cy-18)+'" r="16" fill="#161b22" stroke="#388bfd" stroke-width="2"/>';
+  s+='<polygon points="'+(cx+6)+','+(cy-18)+' '+(cx-4)+','+(cy-26)+' '+(cx-4)+','+(cy-10)+'" fill="#388bfd"/>';
+  if (label) s+='<text x="'+cx+'" y="'+(cy-12)+'" text-anchor="middle" fill="#388bfd" font-size="7" font-weight="700">B'+label+'</text>';
+  return s;
 }
 
 var chartH = null;
 
 function graficarBase() {
-  var puntos = obtenerDatos();
-  if (puntos.length < 2) return;
+  var p1 = obtenerDatos('tabla-bomba1');
+  if (p1.length < 2) return;
   var datasets = [{
-    label: 'Curva bomba N1',
-    data: puntos.map(function(p){return {x:p.q,y:p.h};}),
+    label:'Bomba 1 N1',
+    data:p1.map(function(p){return {x:p.q,y:p.h};}),
     borderColor:'#388bfd', backgroundColor:'rgba(56,139,253,0.06)',
     tension:0.4, fill:false, pointRadius:4, pointBackgroundColor:'#388bfd', borderWidth:2
   }];
+  if (CONFIG !== '1') {
+    var p2 = obtenerDatos('tabla-bomba2');
+    if (p2.length >= 2) {
+      datasets.push({
+        label:'Bomba 2 N1',
+        data:p2.map(function(p){return {x:p.q,y:p.h};}),
+        borderColor:'#a371f7', backgroundColor:'rgba(163,113,247,0.06)',
+        tension:0.4, fill:false, pointRadius:4, pointBackgroundColor:'#a371f7', borderWidth:2
+      });
+      var equiv = curvaEquivalente(p1, p2);
+      if (equiv.length >= 2) {
+        datasets.push({
+          label:CONFIG==='serie'?'Equivalente Serie':'Equivalente Paralelo',
+          data:equiv.map(function(p){return {x:p.q,y:p.h};}),
+          borderColor:'#f0883e', tension:0.4, fill:false,
+          pointRadius:2, borderWidth:2, borderDash:[4,3]
+        });
+      }
+    }
+  }
   renderChart(datasets);
 }
 
@@ -273,10 +408,11 @@ function renderChart(datasets) {
         responsive:true, maintainAspectRatio:false,
         plugins:{
           legend:{labels:{color:'#8b949e',font:{family:'monospace',size:9}}},
-          tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,titleColor:'#e6edf3',bodyColor:'#8b949e'}
+          tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,titleColor:'#e6edf3',bodyColor:'#8b949e'},
+          zoom:{zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'xy'},pan:{enabled:true,mode:'xy'}}
         },
         scales:{
-          x:{type:'linear',min:0,max:200,title:{display:true,text:'Q (m\u00b3/h)',color:'#8b949e'},ticks:{color:'#6e7681'},grid:{color:'rgba(99,110,123,.1)'}},
+          x:{type:'linear',min:0,title:{display:true,text:'Q (m\u00b3/h)',color:'#8b949e'},ticks:{color:'#6e7681'},grid:{color:'rgba(99,110,123,.1)'}},
           y:{type:'linear',min:0,title:{display:true,text:'H (m)',color:'#8b949e'},ticks:{color:'#6e7681'},grid:{color:'rgba(99,110,123,.1)'}}
         }
       }
@@ -285,121 +421,91 @@ function renderChart(datasets) {
 }
 
 function calcular() {
-  var puntos = obtenerDatos();
-  if (puntos.length < 3) { alert('Ingres\u00e1 al menos 3 puntos.'); return; }
+  var p1 = obtenerDatos('tabla-bomba1');
+  if (p1.length < 3) { alert('Ingres\u00e1 al menos 3 puntos en Bomba 1.'); return; }
   var hg = parseFloat(document.getElementById('hg').value);
-  var perdida = parseFloat(document.getElementById('perdida').value);
+  var K = parseFloat(document.getElementById('perdida').value);
   var qReq = parseFloat(document.getElementById('q_req').value);
   var rpmRef = parseFloat(document.getElementById('rpm_ref').value);
-  if (isNaN(hg)||isNaN(perdida)||isNaN(qReq)||isNaN(rpmRef)) { alert('Complet\u00e1 todos los campos.'); return; }
+  if (isNaN(hg)||isNaN(K)||isNaN(qReq)||isNaN(rpmRef)) { alert('Complet\u00e1 todos los campos.'); return; }
 
-  var hReq = hg + perdida;
+  var hReq = hg + K*qReq*qReq;
 
-  // Punto homólogo P
-  var P = hallarPuntoHomologo(puntos, hReq, qReq);
-  var qP = P.qP, hP = P.hP;
-  var rpmNecesaria = rpmRef * Math.sqrt(hReq / hP);
-  var ratio = rpmNecesaria / rpmRef;
-
-  // Punto operativo a 1150 rpm (intersección curva bomba con H inst)
-  var qOp = puntos[0].q, bestDiff = Infinity;
-  for (var i=0; i<=3000; i++) {
-    var q = (i/3000)*puntos[puntos.length-1].q;
-    var diff = Math.abs(interpolar(puntos,q) - (hg + perdida*Math.pow(q/qReq,2)));
-    if (diff < bestDiff) { bestDiff=diff; qOp=q; }
+  // Curva sobre la que se aplica la homología
+  var pEquiv = p1;
+  if (CONFIG !== '1') {
+    var p2 = obtenerDatos('tabla-bomba2');
+    pEquiv = curvaEquivalente(p1, p2);
   }
-  var hOp = interpolar(puntos, qOp);
-  var etaOp = interpolarEta(puntos, qOp);
-  var etaMax = Math.max.apply(null, puntos.map(function(p){return p.e;}));
 
-  // Potencia en punto R con eta del punto homólogo
-  var etaP = interpolarEta(puntos, qP);
-  var qMs = qReq / 3600;
-  var potencia = (9810 * qMs * hReq) / (etaP/100 || 1);
-  var potenciaKW = potencia / 1000;
+  var P = hallarPuntoHomologo(pEquiv, hReq, qReq);
+  var qP=P.qP, hP=P.hP;
+  var rpmNecesaria = rpmRef * Math.sqrt(hReq/hP);
+  var ratio = rpmNecesaria/rpmRef;
 
-  // Actualizar croquis
-  document.getElementById('croquis-area').innerHTML = dibujarCroquis(hg, perdida, qReq.toFixed(1)+' m\u00b3/h', true);
+  // Punto funcionamiento natural
+  var qOp=pEquiv[0].q, bestDiff=Infinity;
+  for (var i=0; i<=3000; i++) {
+    var q=(i/3000)*pEquiv[pEquiv.length-1].q;
+    var diff=Math.abs(interpolar(pEquiv,q)-(hg+K*q*q));
+    if (diff<bestDiff){bestDiff=diff;qOp=q;}
+  }
+  var hOp=interpolar(pEquiv,qOp);
+  var etaP=interpolarEta(p1,qP);
+  var qMs=qReq/3600;
+  var potencia=(9810*qMs*hReq)/(etaP/100||1);
+  var potenciaKW=potencia/1000;
 
   // H inst en tabla
-  var filas = document.querySelectorAll('#tabla-bomba .table-row');
-  for (var f=0; f<filas.length; f++) {
-    var qf = parseFloat(filas[f].querySelectorAll('input')[0].value);
-    if (!isNaN(qf)) {
-      filas[f].querySelector('.hinst-cell').textContent = (hg + perdida*Math.pow(qf/qReq,2)).toFixed(1);
-    }
+  var filas=document.querySelectorAll('#tabla-bomba1 .table-row');
+  for (var f=0;f<filas.length;f++){
+    var qf=parseFloat(filas[f].querySelectorAll('input')[0].value);
+    if (!isNaN(qf)) filas[f].querySelector('.hinst-cell').textContent=(hg+K*qf*qf).toFixed(1);
   }
 
-  // Gráfica con todas las curvas
-  var qMax = puntos[puntos.length-1].q * 1.05;
-  var K = hReq / (qReq*qReq);
+  // Croquis
+  document.getElementById('croquis-area').innerHTML = dibujarCroquis(hg, K, qReq.toFixed(1)+' m\u00b3/h', true, CONFIG);
 
-  // Curva instalación
-  var instPts = [];
-  for (var i=0; i<=30; i++) {
-    var q = (i/30)*qMax;
-    instPts.push({x:parseFloat(q.toFixed(1)), y:parseFloat((hg+perdida*Math.pow(q/qReq,2)).toFixed(2))});
+  // Gráfica
+  var qMax = pEquiv[pEquiv.length-1].q * 1.05;
+  var Kpar = hReq/(qReq*qReq);
+  var instPts=[], parabPts=[];
+  for (var i=0;i<=30;i++){
+    var q=(i/30)*qMax*1.3;
+    instPts.push({x:parseFloat(q.toFixed(1)),y:parseFloat((hg+K*q*q).toFixed(2))});
+    parabPts.push({x:parseFloat(q.toFixed(1)),y:parseFloat((Kpar*q*q).toFixed(2))});
   }
-
-  // Parábola homología
-  var parabPts = [];
-  for (var i=0; i<=30; i++) {
-    var q = (i/30)*qMax;
-    parabPts.push({x:parseFloat(q.toFixed(1)), y:parseFloat((K*q*q).toFixed(2))});
-  }
-
-  // Curva bomba a N2
-  var curvaN2 = puntos.map(function(p){
-    return {x:parseFloat((p.q*ratio).toFixed(1)), y:parseFloat((p.h*ratio*ratio).toFixed(2))};
+  var curvaN2=pEquiv.map(function(p){
+    return {x:parseFloat((p.q*ratio).toFixed(1)),y:parseFloat((p.h*ratio*ratio).toFixed(2))};
   });
 
-  var datasets = [
-    {
-      label:'Bomba N1 ('+rpmRef+' rpm)',
-      data:puntos.map(function(p){return {x:p.q,y:p.h};}),
-      borderColor:'#388bfd', tension:0.4, fill:false, pointRadius:4, pointBackgroundColor:'#388bfd', borderWidth:2
-    },
-    {
-      label:'Instalaci\u00f3n',
-      data:instPts,
-      borderColor:'#3fb950', tension:0.4, fill:false, pointRadius:0, borderWidth:2, borderDash:[5,4]
-    },
-    {
-      label:'Par\u00e1bola homolog\u00eda',
-      data:parabPts,
-      borderColor:'#f85149', tension:0.4, fill:false, pointRadius:0, borderWidth:1.5, borderDash:[3,3]
-    },
-    {
-      label:'Bomba N2 ('+rpmNecesaria.toFixed(0)+' rpm)',
-      data:curvaN2,
-      borderColor:'#d29922', tension:0.4, fill:false, pointRadius:3, pointBackgroundColor:'#d29922', borderWidth:2
-    },
-    {
-      label:'Punto P',
-      data:[{x:parseFloat(qP.toFixed(1)),y:parseFloat(hP.toFixed(2))}],
-      borderColor:'#388bfd', backgroundColor:'#0d1117', pointRadius:8, showLine:false, borderWidth:2
-    },
-    {
-      label:'Pto. funcionamiento N1',
-      data:[{x:parseFloat(qOp.toFixed(1)),y:parseFloat(hOp.toFixed(2))}],
-      borderColor:'#ffffff', backgroundColor:'#ffffff', pointRadius:8, showLine:false, borderWidth:2
-    },
-    {
-      label:'Punto R',
-      data:[{x:parseFloat(qReq.toFixed(1)),y:parseFloat(hReq.toFixed(2))}],
-      borderColor:'#3fb950', backgroundColor:'#3fb950', pointRadius:9, showLine:false
-    }
+  var datasets=[
+    {label:'Bomba 1 N1 ('+rpmRef+' rpm)',data:p1.map(function(p){return {x:p.q,y:p.h};}),borderColor:'#388bfd',tension:0.4,fill:false,pointRadius:4,pointBackgroundColor:'#388bfd',borderWidth:2}
   ];
+
+  if (CONFIG!=='1') {
+    var p2=obtenerDatos('tabla-bomba2');
+    datasets.push({label:'Bomba 2 N1',data:p2.map(function(p){return {x:p.q,y:p.h};}),borderColor:'#a371f7',tension:0.4,fill:false,pointRadius:3,pointBackgroundColor:'#a371f7',borderWidth:1.5,borderDash:[4,2]});
+    datasets.push({label:CONFIG==='serie'?'Equiv. Serie':'Equiv. Paralelo',data:pEquiv.map(function(p){return {x:p.q,y:p.h};}),borderColor:'#f0883e',tension:0.4,fill:false,pointRadius:3,pointBackgroundColor:'#f0883e',borderWidth:2});
+  }
+
+  datasets.push({label:'Instalaci\u00f3n',data:instPts,borderColor:'#3fb950',tension:0.4,fill:false,pointRadius:0,borderWidth:2,borderDash:[5,4]});
+  datasets.push({label:'Par\u00e1bola homolog\u00eda',data:parabPts,borderColor:'#f85149',tension:0.4,fill:false,pointRadius:0,borderWidth:1.5,borderDash:[3,3]});
+  datasets.push({label:'N2 ('+rpmNecesaria.toFixed(0)+' rpm)',data:curvaN2,borderColor:'#d29922',tension:0.4,fill:false,pointRadius:3,pointBackgroundColor:'#d29922',borderWidth:2});
+  datasets.push({label:'Pto. func. N1',data:[{x:parseFloat(qOp.toFixed(1)),y:parseFloat(hOp.toFixed(2))}],borderColor:'#ffffff',backgroundColor:'#ffffff',pointRadius:8,showLine:false,borderWidth:2});
+  datasets.push({label:'Punto P',data:[{x:parseFloat(qP.toFixed(1)),y:parseFloat(hP.toFixed(2))}],borderColor:'#388bfd',backgroundColor:'#0d1117',pointRadius:8,showLine:false,borderWidth:2});
+  datasets.push({label:'Punto R',data:[{x:parseFloat(qReq.toFixed(1)),y:parseFloat(hReq.toFixed(2))}],borderColor:'#3fb950',backgroundColor:'#3fb950',pointRadius:9,showLine:false});
 
   renderChart(datasets);
 
-  document.getElementById('bottom').innerHTML =
-    '<div class="kpi-grid">' +
-    '<div class="kpi-card ac"><div class="kpi-label">Q requerido</div><div class="kpi-value">'+qReq.toFixed(1)+'<span class="kpi-unit"> m\u00b3/h</span></div><div class="kpi-sub">'+(qReq/3.6).toFixed(3)+' m\u00b3/s</div></div>' +
-    '<div class="kpi-card ac"><div class="kpi-label">H manométrica</div><div class="kpi-value">'+hReq.toFixed(1)+'<span class="kpi-unit"> m</span></div><div class="kpi-sub">Hg='+hg+' + \u0394H='+perdida+'</div></div>' +
-    '<div class="kpi-card gr"><div class="kpi-label">RPM requeridas</div><div class="kpi-value">'+rpmNecesaria.toFixed(0)+'<span class="kpi-unit"> rpm</span></div><div class="kpi-sub">ref: '+rpmRef+' rpm</div></div>' +
-    '<div class="kpi-card ye"><div class="kpi-label">Potencia en R</div><div class="kpi-value">'+potenciaKW.toFixed(2)+'<span class="kpi-unit"> kW</span></div><div class="kpi-sub">\u03b7P='+etaP.toFixed(1)+'%</div></div>' +
-    '<div class="kpi-card re"><div class="kpi-label">Punto P (homólogo)</div><div class="kpi-value">'+qP.toFixed(1)+'<span class="kpi-unit"> m\u00b3/h</span></div><div class="kpi-sub">HP='+hP.toFixed(2)+' m</div></div>' +
+  var configLabel = CONFIG==='1'?'1 Bomba':CONFIG==='serie'?'2 en Serie':'2 en Paralelo';
+  document.getElementById('bottom').innerHTML=
+    '<div class="kpi-grid">'+
+    '<div class="kpi-card ac"><div class="kpi-label">Configuración</div><div class="kpi-value" style="font-size:13px;">'+configLabel+'</div><div class="kpi-sub">Q='+qReq.toFixed(1)+' m\u00b3/h</div></div>'+
+    '<div class="kpi-card ac"><div class="kpi-label">H manométrica</div><div class="kpi-value">'+hReq.toFixed(1)+'<span class="kpi-unit"> m</span></div><div class="kpi-sub">Hg='+hg+' K='+K+'</div></div>'+
+    '<div class="kpi-card gr"><div class="kpi-label">RPM requeridas</div><div class="kpi-value">'+rpmNecesaria.toFixed(0)+'<span class="kpi-unit"> rpm</span></div><div class="kpi-sub">ref: '+rpmRef+' rpm</div></div>'+
+    '<div class="kpi-card ye"><div class="kpi-label">Potencia total</div><div class="kpi-value">'+potenciaKW.toFixed(2)+'<span class="kpi-unit"> kW</span></div><div class="kpi-sub">\u03b7='+etaP.toFixed(1)+'%</div></div>'+
+    '<div class="kpi-card re"><div class="kpi-label">Punto P</div><div class="kpi-value">'+qP.toFixed(1)+'<span class="kpi-unit"> m\u00b3/h</span></div><div class="kpi-sub">HP='+hP.toFixed(2)+' m</div></div>'+
     '</div>';
 }
 
@@ -407,11 +513,9 @@ function calcular() {
 document.getElementById('croquis-area').innerHTML = dibujarCroquis(
   parseFloat(document.getElementById('hg').value),
   parseFloat(document.getElementById('perdida').value),
-  '', false
+  '', false, '1'
 );
 graficarBase();
-
-// croquis only updates on Calcular
 </script>
 </body>
 </html>
