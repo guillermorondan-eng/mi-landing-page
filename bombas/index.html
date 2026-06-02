@@ -268,12 +268,12 @@ function dibujarCroquis(hg, perdida, qOp, hOp, calculado) {
 let chartH = null;
 let calculadoFlag = false;
 
-function actualizarGrafica() {
+function actualizarGrafica(datosCalc) {
   const puntos = obtenerDatos();
   if (puntos.length < 2) return;
 
   const datasets = [{
-    label: 'Curva bomba H(Q)',
+    label: 'Curva bomba N1 (catálogo)',
     data: puntos.map(p => ({x: p.q, y: p.h})),
     borderColor: '#388bfd',
     backgroundColor: 'rgba(56,139,253,0.06)',
@@ -281,32 +281,65 @@ function actualizarGrafica() {
     pointBackgroundColor: '#388bfd', borderWidth: 2
   }];
 
-  if (calculadoFlag) {
-    const hg = parseFloat(document.getElementById('hg').value);
-    const perdida = parseFloat(document.getElementById('perdida').value);
-    const qReq = parseFloat(document.getElementById('q_req').value);
-    const qOp = findIntersection(puntos, hg, perdida, qReq);
-    const hOp = interpolar(puntos, qOp);
+  if (calculadoFlag && datosCalc) {
+    const { hg, perdida, qReq, qP, hP, rpmNecesaria, rpmRef, qR, hR } = datosCalc;
+    const qMax = Math.max(puntos[puntos.length-1].q, qReq) * 1.1;
 
-    // Curva instalación con suficientes puntos
-    const qMax = puntos[puntos.length-1].q;
+    // Curva instalación
     const instPts = [];
-    for (let i = 0; i <= 20; i++) {
-      const q = (i/20) * qMax;
+    for (let i = 0; i <= 30; i++) {
+      const q = (i/30) * qMax;
       instPts.push({x: parseFloat(q.toFixed(2)), y: parseFloat((hg + perdida*Math.pow(q/qReq,2)).toFixed(2))});
     }
-
     datasets.push({
-      label: 'Curva instalación H(Q)',
+      label: 'Curva instalación',
       data: instPts,
       borderColor: '#3fb950', tension: 0.4, fill: false,
       pointRadius: 0, borderWidth: 2, borderDash: [5,4]
     });
 
+    // Parábola de homología H = K·Q²
+    const K = hR / (qR * qR);
+    const parabPts = [];
+    for (let i = 0; i <= 30; i++) {
+      const q = (i/30) * qMax;
+      parabPts.push({x: parseFloat(q.toFixed(2)), y: parseFloat((K*q*q).toFixed(2))});
+    }
     datasets.push({
-      label: 'Punto operativo',
-      data: [{x: parseFloat(qOp.toFixed(2)), y: parseFloat(hOp.toFixed(2))}],
-      borderColor: '#d29922', backgroundColor: '#d29922',
+      label: 'Parábola de homología',
+      data: parabPts,
+      borderColor: '#f85149', tension: 0.4, fill: false,
+      pointRadius: 0, borderWidth: 1.5, borderDash: [3,3]
+    });
+
+    // Curva de la bomba a N2 (escalada)
+    const ratio = rpmNecesaria / rpmRef;
+    const curvaN2 = puntos.map(p => ({
+      x: parseFloat((p.q * ratio).toFixed(2)),
+      y: parseFloat((p.h * ratio * ratio).toFixed(2))
+    }));
+    // Extender hasta qR
+    datasets.push({
+      label: ,
+      data: curvaN2,
+      borderColor: '#d29922', tension: 0.4, fill: false,
+      pointRadius: 3, pointBackgroundColor: '#d29922', borderWidth: 2
+    });
+
+    // Punto P (homólogo en curva original)
+    datasets.push({
+      label: 'Punto P (homólogo)',
+      data: [{x: parseFloat(qP.toFixed(2)), y: parseFloat(hP.toFixed(2))}],
+      borderColor: '#388bfd', backgroundColor: '#161b22',
+      pointRadius: 8, pointStyle: 'circle', showLine: false,
+      borderWidth: 2
+    });
+
+    // Punto R (requerido)
+    datasets.push({
+      label: ,
+      data: [{x: parseFloat(qR.toFixed(2)), y: parseFloat(hR.toFixed(2))}],
+      borderColor: '#3fb950', backgroundColor: '#3fb950',
       pointRadius: 9, showLine: false
     });
   }
@@ -372,8 +405,8 @@ function calcular() {
   const etaMax = Math.max(...puntos.map(p => p.e));
 
   calculadoFlag = true;
-  actualizarCroquis(hg, perdida, qOp, hOp, true);
-  actualizarGrafica();
+  actualizarCroquis(hg, perdida, qReq, hReq, true);
+  actualizarGrafica({ hg, perdida, qReq, qP, hP, rpmNecesaria, rpmRef, qR: qReq, hR: hReq });
 
   // Rellenar columna H instalación en cada fila
   const filas = document.querySelectorAll('#tabla-bomba .table-row');
