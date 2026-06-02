@@ -77,6 +77,14 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
 .bomba2-section.visible { display:block; }
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-thumb { background:var(--border2);border-radius:2px; }
+.k-calc-section { background:var(--bg3);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:.5rem; }
+.k-calc-header { padding:6px 10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--text2);font-family:var(--font);letter-spacing:.05em;text-transform:uppercase; }
+.k-calc-header:hover { color:var(--accent2); }
+.k-calc-body { padding:8px 10px;display:none;border-top:1px solid var(--border); }
+.k-calc-body.open { display:block; }
+.k-result { background:var(--bg2);border:1px solid rgba(210,153,34,0.4);border-radius:4px;padding:6px 10px;margin-top:6px;font-family:var(--font);font-size:11px;color:var(--yellow);display:none; }
+select { background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;padding:5px 7px;width:100%;outline:none; }
+select:focus { border-color:var(--accent); }
 </style>
 </head>
 <body>
@@ -84,7 +92,149 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
   <div class="logo"><i class="ti ti-ripple"></i></div>
   <h1>Calculadora Hidráulica — Bombas Centrífugas</h1>
   <span>v1.0</span>
+
 </header>
+<!-- K CALC MODAL -->
+<div id="k-modal" style="display:none;position:fixed;top:61px;right:0;width:380px;max-height:calc(100vh - 61px);overflow-y:auto;background:var(--bg2);border-left:1px solid var(--border);border-bottom:1px solid var(--border);padding:1rem;z-index:100;box-shadow:-4px 4px 20px rgba(0,0,0,0.4);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+    <span style="font-size:11px;font-weight:600;color:var(--text);font-family:var(--font);text-transform:uppercase;letter-spacing:.08em;">Calcular K de instalación</span>
+    <button onclick="toggleKCalc()" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;">✕</button>
+  </div>
+
+  <div style="font-size:9px;color:var(--text3);font-family:var(--font);margin-bottom:.75rem;">H_inst = Hg + K·Q² &nbsp;|&nbsp; K = K_succ + K_imp</div>
+
+  <!-- SUCCIÓN -->
+  <div style="background:var(--bg3);border:1px solid rgba(56,139,253,0.3);border-radius:6px;padding:.75rem;margin-bottom:.75rem;">
+    <div style="font-size:10px;font-weight:600;color:#388bfd;font-family:var(--font);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.06em;">Tubería de succión</div>
+    <div class="field">
+      <label>Material</label>
+      <select id="ks-mat" onchange="calcularK()" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;padding:5px 7px;width:100%;outline:none;">
+        <option value="0.046">Acero comercial (ε=0.046mm)</option>
+        <option value="0.15">Hierro galvanizado (ε=0.15mm)</option>
+        <option value="0.26">Hierro fundido (ε=0.26mm)</option>
+        <option value="0.0015">PVC (ε=0.0015mm)</option>
+        <option value="0.003">Polietileno (ε=0.003mm)</option>
+        <option value="1.0">Hormigón (ε=1.0mm)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Diámetro nominal</label>
+      <select id="ks-diam" onchange="calcularK()" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;padding:5px 7px;width:100%;outline:none;">
+        <option value="6.835">1/8" (DN 6.8mm)</option>
+        <option value="9.246">1/4" (DN 9.2mm)</option>
+        <option value="12.522">3/8" (DN 12.5mm)</option>
+        <option value="15.799">1/2" (DN 15.8mm)</option>
+        <option value="20.930">3/4" (DN 20.9mm)</option>
+        <option value="26.645">1" (DN 26.6mm)</option>
+        <option value="40.894">1 1/2" (DN 40.9mm)</option>
+        <option value="52.502">2" (DN 52.5mm)</option>
+        <option value="62.713">2 1/2" (DN 62.7mm)</option>
+        <option value="77.927">3" (DN 77.9mm)</option>
+        <option value="102.260">4" (DN 102.3mm)</option>
+        <option value="128.194">5" (DN 128.2mm)</option>
+        <option value="154.051">6" (DN 154.1mm)</option>
+        <option value="202.717">8" (DN 202.7mm)</option>
+        <option value="254.508">10" (DN 254.5mm)</option>
+        <option value="304.800">12" (DN 304.8mm)</option>
+        <option value="400">DN 400mm</option>
+        <option value="500">DN 500mm</option>
+        <option value="600">DN 600mm</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Longitud de tubería</label>
+      <div class="input-row"><input type="number" id="ks-long" value="25" step="1" min="0" oninput="calcularK()"><span class="unit">m</span></div>
+    </div>
+    <div style="font-size:9px;color:#388bfd;font-family:var(--font);margin-bottom:4px;margin-top:4px;">ACCESORIOS (cantidad)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
+      <div class="field"><label>Codos 90°</label><div class="input-row"><input type="number" id="ks-c90" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×30</span></div></div>
+      <div class="field"><label>Codos 45°</label><div class="input-row"><input type="number" id="ks-c45" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×16</span></div></div>
+      <div class="field"><label>Codos 180°</label><div class="input-row"><input type="number" id="ks-c180" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×50</span></div></div>
+      <div class="field"><label>V. compuerta</label><div class="input-row"><input type="number" id="ks-vcomp" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×8</span></div></div>
+      <div class="field"><label>V. globo</label><div class="input-row"><input type="number" id="ks-vglob" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×340</span></div></div>
+      <div class="field"><label>V. ángulo</label><div class="input-row"><input type="number" id="ks-vang" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×150</span></div></div>
+      <div class="field"><label>V. bola</label><div class="input-row"><input type="number" id="ks-vbola" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×3</span></div></div>
+      <div class="field"><label>V. ret. bola</label><div class="input-row"><input type="number" id="ks-vretb" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×600</span></div></div>
+      <div class="field"><label>V. ret. disco</label><div class="input-row"><input type="number" id="ks-vretd" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×55</span></div></div>
+      <div class="field"><label>V. pie filtro</label><div class="input-row"><input type="number" id="ks-vpie" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×420</span></div></div>
+      <div class="field"><label>T derivado</label><div class="input-row"><input type="number" id="ks-tder" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×60</span></div></div>
+      <div class="field"><label>T directo</label><div class="input-row"><input type="number" id="ks-tdir" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×20</span></div></div>
+      <div class="field"><label>Reentrada</label><div class="input-row"><input type="number" id="ks-rent" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×0.78</span></div></div>
+      <div class="field"><label>Borde cuadrado</label><div class="input-row"><input type="number" id="ks-bcuad" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×0.6</span></div></div>
+      <div class="field"><label>Borde redondeado</label><div class="input-row"><input type="number" id="ks-bred" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×0.15</span></div></div>
+    </div>
+    <div class="field" style="margin-top:4px;">
+      <label>K entrada cañería</label>
+      <div class="input-row"><input type="number" id="ks-kent" value="0.5" step="0.01" min="0" oninput="calcularK()"><span class="unit">adim</span></div>
+    </div>
+    <div id="ks-result" style="font-family:var(--font);font-size:10px;color:#388bfd;margin-top:4px;"></div>
+  </div>
+
+  <!-- IMPULSIÓN -->
+  <div style="background:var(--bg3);border:1px solid rgba(63,185,80,0.3);border-radius:6px;padding:.75rem;margin-bottom:.75rem;">
+    <div style="font-size:10px;font-weight:600;color:#3fb950;font-family:var(--font);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.06em;">Tubería de impulsión</div>
+    <div class="field">
+      <label>Material</label>
+      <select id="ki-mat" onchange="calcularK()" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;padding:5px 7px;width:100%;outline:none;">
+        <option value="0.046">Acero comercial (ε=0.046mm)</option>
+        <option value="0.15">Hierro galvanizado (ε=0.15mm)</option>
+        <option value="0.26">Hierro fundido (ε=0.26mm)</option>
+        <option value="0.0015">PVC (ε=0.0015mm)</option>
+        <option value="0.003">Polietileno (ε=0.003mm)</option>
+        <option value="1.0">Hormigón (ε=1.0mm)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Diámetro nominal</label>
+      <select id="ki-diam" onchange="calcularK()" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;padding:5px 7px;width:100%;outline:none;">
+        <option value="6.835">1/8" (DN 6.8mm)</option>
+        <option value="9.246">1/4" (DN 9.2mm)</option>
+        <option value="12.522">3/8" (DN 12.5mm)</option>
+        <option value="15.799">1/2" (DN 15.8mm)</option>
+        <option value="20.930">3/4" (DN 20.9mm)</option>
+        <option value="26.645">1" (DN 26.6mm)</option>
+        <option value="40.894">1 1/2" (DN 40.9mm)</option>
+        <option value="52.502">2" (DN 52.5mm)</option>
+        <option value="62.713">2 1/2" (DN 62.7mm)</option>
+        <option value="77.927">3" (DN 77.9mm)</option>
+        <option value="102.260">4" (DN 102.3mm)</option>
+        <option value="128.194">5" (DN 128.2mm)</option>
+        <option value="154.051">6" (DN 154.1mm)</option>
+        <option value="202.717">8" (DN 202.7mm)</option>
+        <option value="254.508">10" (DN 254.5mm)</option>
+        <option value="304.800">12" (DN 304.8mm)</option>
+        <option value="400">DN 400mm</option>
+        <option value="500">DN 500mm</option>
+        <option value="600">DN 600mm</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Longitud de tubería</label>
+      <div class="input-row"><input type="number" id="ki-long" value="160" step="1" min="0" oninput="calcularK()"><span class="unit">m</span></div>
+    </div>
+    <div style="font-size:9px;color:#3fb950;font-family:var(--font);margin-bottom:4px;margin-top:4px;">ACCESORIOS (cantidad)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
+      <div class="field"><label>Codos 90°</label><div class="input-row"><input type="number" id="ki-c90" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×30</span></div></div>
+      <div class="field"><label>Codos 45°</label><div class="input-row"><input type="number" id="ki-c45" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×16</span></div></div>
+      <div class="field"><label>Codos 180°</label><div class="input-row"><input type="number" id="ki-c180" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×50</span></div></div>
+      <div class="field"><label>V. compuerta</label><div class="input-row"><input type="number" id="ki-vcomp" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×8</span></div></div>
+      <div class="field"><label>V. globo</label><div class="input-row"><input type="number" id="ki-vglob" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×340</span></div></div>
+      <div class="field"><label>V. ángulo</label><div class="input-row"><input type="number" id="ki-vang" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×150</span></div></div>
+      <div class="field"><label>V. bola</label><div class="input-row"><input type="number" id="ki-vbola" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×3</span></div></div>
+      <div class="field"><label>V. ret. bola</label><div class="input-row"><input type="number" id="ki-vretb" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×600</span></div></div>
+      <div class="field"><label>V. ret. disco</label><div class="input-row"><input type="number" id="ki-vretd" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×55</span></div></div>
+      <div class="field"><label>V. pie filtro</label><div class="input-row"><input type="number" id="ki-vpie" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×420</span></div></div>
+      <div class="field"><label>T derivado</label><div class="input-row"><input type="number" id="ki-tder" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×60</span></div></div>
+      <div class="field"><label>T directo</label><div class="input-row"><input type="number" id="ki-tdir" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×20</span></div></div>
+      <div class="field"><label>Reentrada</label><div class="input-row"><input type="number" id="ki-rent" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×0.78</span></div></div>
+      <div class="field"><label>Borde cuadrado</label><div class="input-row"><input type="number" id="ki-bcuad" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×0.6</span></div></div>
+      <div class="field"><label>Borde redondeado</label><div class="input-row"><input type="number" id="ki-bred" value="0" step="1" min="0" oninput="calcularK()"><span class="unit">×0.15</span></div></div>
+    </div>
+    <div id="ki-result" style="font-family:var(--font);font-size:10px;color:#3fb950;margin-top:4px;"></div>
+  </div>
+
+  <div id="k-result" style="background:var(--bg3);border:1px solid rgba(210,153,34,0.5);border-radius:6px;padding:10px 12px;margin-top:8px;font-family:var(--font);font-size:11px;color:var(--yellow);display:none;"></div>
+</div>
 <div class="main">
   <div class="col col-left">
     <div>
@@ -94,7 +244,7 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
         <div class="input-row"><input type="number" id="hg" value="20" step="0.1" min="0"><span class="unit">m</span></div>
       </div>
       <div class="field">
-        <label>K pérdida de carga &nbsp;<span style="color:var(--text3);font-size:9px;">H = Hg + K·Q²</span></label>
+        <label style="display:flex;align-items:center;justify-content:space-between;">K pérdida de carga &nbsp;<span style="color:var(--text3);font-size:9px;">H = Hg + K·Q²</span><button onclick="toggleKCalc()" style="background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--text3);cursor:pointer;padding:1px 6px;font-size:9px;font-family:var(--font2);" title="Calcular K"><i class="ti ti-calculator" style="font-size:10px;"></i></button></label>
         <div class="input-row"><input type="number" id="perdida" value="0.000547" step="0.000001" min="0"><span class="unit">m/(m³/h)²</span></div>
       </div>
       <div class="field">
@@ -115,6 +265,49 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
         <button class="cfg-btn" onclick="setConfig('paralelo')" id="btnParalelo">2 Paralelo</button>
       </div>
     </div>
+    <div class="k-calc-section">
+      <div class="k-calc-header" onclick="toggleKCalc()">
+        <span><i class="ti ti-calculator" style="font-size:11px;margin-right:4px;"></i> Calcular K desde tubería</span>
+        <i class="ti ti-chevron-down" id="k-chevron" style="font-size:11px;"></i>
+      </div>
+      <div class="k-calc-body" id="k-calc-body">
+        <div class="field">
+          <label>Material</label>
+          <select id="k-material" onchange="calcularK()">
+            <option value="0.046">Acero comercial (ε=0.046mm)</option>
+            <option value="0.15">Hierro galvanizado (ε=0.15mm)</option>
+            <option value="0.26">Hierro fundido (ε=0.26mm)</option>
+            <option value="0.0015">PVC (ε=0.0015mm)</option>
+            <option value="0.003">Polietileno (ε=0.003mm)</option>
+            <option value="1.0">Hormigón (ε=1.0mm)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Diámetro interno</label>
+          <div class="input-row"><input type="number" id="k-diam" value="300" step="1" min="1" oninput="calcularK()"><span class="unit">mm</span></div>
+        </div>
+        <div class="field">
+          <label>Longitud equivalente</label>
+          <div class="input-row"><input type="number" id="k-long" value="500" step="1" min="0" oninput="calcularK()"><span class="unit">m</span></div>
+        </div>
+        <div class="field">
+          <label>Caudal de referencia</label>
+          <div class="input-row"><input type="number" id="k-caudal" value="165.6" step="1" min="0" oninput="calcularK()"><span class="unit">m³/h</span></div>
+        </div>
+        <div class="k-result" id="k-result"></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="section-title"><i class="ti ti-database"></i> Selección de bomba</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <select id="selector-bomba1" onchange="cargarDesdeCatalogo('tabla-bomba1','selector-bomba1','info-bomba1')" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;padding:5px 7px;outline:none;">
+          <option value="">— Standard (manual) —</option>
+        </select>
+      </div>
+      <div id="info-bomba1" style="font-size:10px;font-family:var(--font);color:var(--text2);display:none;margin-bottom:4px;background:var(--bg3);border-radius:4px;padding:5px 8px;border:1px solid var(--border);">
+      </div>
+    </div>
     <div class="divider"></div>
     <div>
       <div class="section-title"><i class="ti ti-table"></i> Curva Bomba 1</div>
@@ -126,6 +319,14 @@ input[type="number"] { background:transparent;border:none;outline:none;color:var
     </div>
     <div class="divider"></div>
     <div class="bomba2-section" id="bomba2-section">
+      <div class="section-title"><i class="ti ti-database"></i> Bomba 2 — Selección</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <select id="selector-bomba2" onchange="cargarDesdeCatalogo('tabla-bomba2','selector-bomba2','info-bomba2')" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font);font-size:11px;padding:5px 7px;outline:none;">
+          <option value="">— Standard (manual) —</option>
+        </select>
+      </div>
+      <div id="info-bomba2" style="font-size:10px;font-family:var(--font);color:var(--text2);display:none;margin-bottom:4px;background:var(--bg3);border-radius:4px;padding:5px 8px;border:1px solid var(--border);">
+      </div>
       <div class="section-title"><i class="ti ti-table"></i> Curva Bomba 2</div>
       <div class="table-header">
         <span>Q (m³/h)</span><span>H (m)</span><span>η (%)</span><span></span><span></span>
@@ -509,7 +710,197 @@ function calcular() {
     '</div>';
 }
 
+function toggleKCalc() {
+  var modal = document.getElementById('k-modal');
+  if (modal.style.display === 'none') {
+    modal.style.display = 'block';
+    calcularK();
+  } else {
+    modal.style.display = 'none';
+  }
+}
+
+function getAccLED(prefix) {
+  function n(id) {
+    var el = document.getElementById(prefix+id);
+    return el ? (parseFloat(el.value)||0) : 0;
+  }
+  return n('c90')*30 + n('c45')*16 + n('c180')*50 +
+    n('vcomp')*8 + n('vglob')*340 + n('vang')*150 +
+    n('vbola')*3 + n('vretb')*600 + n('vretd')*55 +
+    n('vpie')*420 + n('tder')*60 + n('tdir')*20 +
+    n('rent')*0.78 + n('bcuad')*0.6 + n('bred')*0.15;
+}
+
+function calcKAlpha() {
+  // Opcion B: alpha = (fs * Ls_total/Ds) * (Di/Ds)^4 + fi * Li_total/Di + K_entrada
+  var eps_s = parseFloat(document.getElementById('ks-mat').value);
+  var Ds = parseFloat(document.getElementById('ks-diam').value)/1000;
+  var Ls = parseFloat(document.getElementById('ks-long').value)||0;
+  var leD_s = getAccLED('ks-');
+  var Ls_total_D = Ls/Ds + leD_s;
+
+  var eps_i = parseFloat(document.getElementById('ki-mat').value);
+  var Di = parseFloat(document.getElementById('ki-diam').value)/1000;
+  var Li = parseFloat(document.getElementById('ki-long').value)||0;
+  var leD_i = getAccLED('ki-');
+  var Li_total_D = Li/Di + leD_i;
+
+  var Kent = parseFloat(document.getElementById('ks-kent').value)||0.5;
+  var hg = parseFloat(document.getElementById('hg').value)||20;
+  var g = 9.81; var nu = 1e-6;
+  var epsRel_s = (eps_s/1000)/Ds;
+  var epsRel_i = (eps_i/1000)/Di;
+
+  var fs = 0.02, fi = 0.02;
+  var Vi, Vs, Re_s, Re_i, fs_new, fi_new;
+  var iters = [];
+
+  for (var k=0; k<15; k++) {
+    // alpha con Opcion B
+    var alpha = (fs * Ls_total_D) * Math.pow(Di/Ds, 4) + fi * Li_total_D + Kent;
+    Vi = Math.sqrt(2*g*hg / alpha);
+    Vs = Vi * Math.pow(Di/Ds, 2);
+    Re_i = Vi*Di/nu;
+    Re_s = Vs*Ds/nu;
+    fs_new = 0.25/Math.pow(Math.log10(epsRel_s/3.7+5.74/Math.pow(Re_s,0.9)),2);
+    fi_new = 0.25/Math.pow(Math.log10(epsRel_i/3.7+5.74/Math.pow(Re_i,0.9)),2);
+    var err_s = Math.abs(fs_new-fs)/fs*100;
+    var err_i = Math.abs(fi_new-fi)/fi*100;
+    iters.push({fs:fs, fi:fi, Vi:Vi, Vs:Vs, Re_s:Re_s, Re_i:Re_i, fs_new:fs_new, fi_new:fi_new, err_s:err_s, err_i:err_i});
+    fs = fs_new; fi = fi_new;
+    if (err_s < 0.001 && err_i < 0.001) break;
+  }
+
+  // K para cada tramo (en m/(m3/h)^2)
+  var c = 8/(Math.pow(Math.PI,2)*g);
+  var Ks = c * fs * Ls_total_D / Math.pow(Ds,4) / (3600*3600);
+  var Ki = c * fi * Li_total_D / Math.pow(Di,4) / (3600*3600);
+  var Ktotal = Ks + Ki;
+
+  // Q con ese Vi
+  var Qi = Vi * Math.PI*Di*Di/4 * 3600;
+
+  return {fs:fs, fi:fi, Vi:Vi, Vs:Vs, Re_s:Re_s, Re_i:Re_i,
+    Ks:Ks, Ki:Ki, Ktotal:Ktotal, Qi:Qi,
+    leD_s:leD_s, leD_i:leD_i, iters:iters};
+}
+
+function calcularK() {
+  var r = calcKAlpha();
+  if (!r) return;
+
+  // Iteration table
+  var t = '<table style="width:100%;border-collapse:collapse;font-size:9px;margin-top:6px;">';
+  t += '<tr style="color:var(--text3);"><th style="padding:2px 3px;text-align:right;">fs</th><th style="padding:2px 3px;text-align:right;">fi</th><th style="padding:2px 3px;text-align:right;">Vi m/s</th><th style="padding:2px 3px;text-align:right;">Re_i</th><th style="padding:2px 3px;text-align:right;">Re_s</th><th style="padding:2px 3px;text-align:right;">fs nuevo</th><th style="padding:2px 3px;text-align:right;">fi nuevo</th><th style="padding:2px 3px;text-align:right;">Err%</th></tr>';
+  for (var i=0; i<r.iters.length; i++) {
+    var it = r.iters[i];
+    var maxErr = Math.max(it.err_s, it.err_i);
+    var bg = maxErr < 0.001 ? 'background:rgba(63,185,80,0.15);' : '';
+    t += '<tr style="'+bg+'">' +
+      '<td style="text-align:right;padding:2px 3px;">'+it.fs.toFixed(5)+'</td>' +
+      '<td style="text-align:right;padding:2px 3px;">'+it.fi.toFixed(5)+'</td>' +
+      '<td style="text-align:right;padding:2px 3px;">'+it.Vi.toFixed(3)+'</td>' +
+      '<td style="text-align:right;padding:2px 3px;">'+it.Re_i.toFixed(0)+'</td>' +
+      '<td style="text-align:right;padding:2px 3px;">'+it.Re_s.toFixed(0)+'</td>' +
+      '<td style="text-align:right;padding:2px 3px;">'+it.fs_new.toFixed(5)+'</td>' +
+      '<td style="text-align:right;padding:2px 3px;">'+it.fi_new.toFixed(5)+'</td>' +
+      '<td style="text-align:right;padding:2px 3px;">'+maxErr.toFixed(3)+'</td></tr>';
+  }
+  t += '</table>';
+
+  document.getElementById('ks-result').innerHTML =
+    'fs='+r.fs.toFixed(5)+' Vs='+r.Vs.toFixed(3)+' m/s Re_s='+r.Re_s.toFixed(0)+' ΣLe/D='+r.leD_s.toFixed(0)+' Ks='+r.Ks.toExponential(3);
+  document.getElementById('ki-result').innerHTML =
+    'fi='+r.fi.toFixed(5)+' Vi='+r.Vi.toFixed(3)+' m/s Re_i='+r.Re_i.toFixed(0)+' ΣLe/D='+r.leD_i.toFixed(0)+' Ki='+r.Ki.toExponential(3);
+
+  var res = document.getElementById('k-result');
+  res.style.display = 'block';
+  res.innerHTML =
+    '<div style="margin-bottom:4px;">Ks = '+r.Ks.toExponential(4)+' &nbsp;+&nbsp; Ki = '+r.Ki.toExponential(4)+'</div>' +
+    '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">K total = '+r.Ktotal.toExponential(4)+' m/(m³/h)²</div>' +
+    '<div style="font-size:10px;color:var(--text2);">Q estimado (V en impulsión): '+r.Qi.toFixed(1)+' m³/h</div>' +
+    t;
+}
+
+// ===== CATÁLOGO KSB MEGANORM =====
+var catalogo_KSB = [
+  {modelo:"KSB Meganorm 150-500",rpm:1450,rotor_mm:504,DN_succion_mm:200,DN_impulsion_mm:150,
+   Q:[0,100,200,300,400,500,600],H:[90,88,84,78,68,55,38],eta:[null,null,40,60,70,74,73]},
+  {modelo:"KSB Meganorm 200-250",rpm:1450,rotor_mm:269,DN_succion_mm:200,DN_impulsion_mm:200,
+   Q:[0,100,200,300,400,500,600,700,800],H:[19.5,19.2,18.5,17.5,16,13.5,10.5,7,3.5],eta:[null,null,null,60,75,80,84,85,83]},
+  {modelo:"KSB Meganorm 200-315",rpm:1450,rotor_mm:320,DN_succion_mm:250,DN_impulsion_mm:200,
+   Q:[0,100,200,300,400,500,600,700,800],H:[34.5,34,33,31.5,29.5,27,23.5,19,13.5],eta:[null,null,null,null,null,80,86,82,null]},
+  {modelo:"KSB Meganorm 200-400",rpm:1450,rotor_mm:404,DN_succion_mm:250,DN_impulsion_mm:200,
+   Q:[0,100,200,300,400,500,600,700,800],H:[58,57,55,52,49,45,40,33,24],eta:[null,null,null,null,75,78,81,83,81]},
+  {modelo:"KSB Meganorm 200-500",rpm:1450,rotor_mm:504,DN_succion_mm:250,DN_impulsion_mm:200,
+   Q:[0,100,200,300,400,500,600,700,800],H:[90,88,85,81,76,70,62,52,40],eta:[null,null,null,null,75,78,80,82,80]},
+  {modelo:"KSB Meganorm 250-300",rpm:1450,rotor_mm:313,DN_succion_mm:250,DN_impulsion_mm:250,
+   Q:[0,100,200,300,400,500,600,700,800,900,950,1000,1100,1200],H:[26.5,26.2,25.5,24.5,23,21,18.5,15.5,12.5,9.5,8.5,7,4.5,2.5],eta:[null,null,null,null,60,70,75,80,82,84,85,84,80,null]},
+  {modelo:"KSB Meganorm 250-315",rpm:1450,rotor_mm:324,DN_succion_mm:300,DN_impulsion_mm:250,
+   Q:[0,200,400,600,800,1000,1200,1400],H:[34.5,33.5,31.5,28.5,24.5,19.5,13.5,7],eta:[null,null,null,75,80,84,82,null]},
+  {modelo:"KSB Meganorm 250-400",rpm:1450,rotor_mm:404,DN_succion_mm:300,DN_impulsion_mm:250,
+   Q:[0,200,400,600,800,1000,1200],H:[60,58,54,49,42,33,22],eta:[null,null,null,75,82,86,84]},
+  {modelo:"KSB Meganorm 250-500",rpm:1450,rotor_mm:504,DN_succion_mm:300,DN_impulsion_mm:250,
+   Q:[0,200,400,600,800,1000,1200,1400],H:[90,88,84,79,72,63,52,38],eta:[null,null,null,75,80,83,85,83]},
+  {modelo:"KSB Meganorm 300-340",rpm:1450,rotor_mm:351,DN_succion_mm:300,DN_impulsion_mm:300,
+   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[30.5,30,29,27.5,25.5,22.5,18.5,14,9.5,5.5,2],eta:[null,null,null,null,80,84,85,84,82,75,null]},
+  {modelo:"KSB Meganorm 300-360",rpm:1450,rotor_mm:360,DN_succion_mm:300,DN_impulsion_mm:300,
+   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[39.5,39,38,36.5,34.5,31.5,27.5,23,17.5,11.5,5.5],eta:[null,null,null,75,80,83,85,88,85,80,null]},
+  {modelo:"KSB Meganorm 300-400",rpm:1450,rotor_mm:430,DN_succion_mm:350,DN_impulsion_mm:300,
+   Q:[0,200,400,600,800,1000,1200,1400,1600,1800],H:[64,63,61,58,54,49,43,36,27,17],eta:[null,null,null,75,80,84,86,87,86,82]},
+  {modelo:"KSB Meganorm 350-370A",rpm:1450,rotor_mm:396,DN_succion_mm:350,DN_impulsion_mm:350,
+   Q:[0,500,1000,1500,2000,2500,3000],H:[44,42,37,30,22,14,6],eta:[null,null,75,81,84,83,75]},
+  {modelo:"KSB Meganorm 350-370B",rpm:1450,rotor_mm:405,DN_succion_mm:350,DN_impulsion_mm:350,
+   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[48,47,45,43,40,36,31,25,19,12,6],eta:[null,null,null,null,78,80,82,83,82,80,null]},
+  {modelo:"KSB Meganorm 350-400A",rpm:1450,rotor_mm:422,DN_succion_mm:350,DN_impulsion_mm:350,
+   Q:[0,500,1000,1500,2000,2500],H:[52,51,48,43,36,27],eta:[null,null,null,80,83,82]},
+  {modelo:"KSB Meganorm 350-400B",rpm:1450,rotor_mm:407,DN_succion_mm:350,DN_impulsion_mm:350,
+   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000,2200],H:[50,49,47,45,42,38,34,29,23,17,10,4],eta:[null,null,null,null,82,84,85,86,85,84,82,null]}
+];
+
+function poblarSelectores() {
+  var opts = '<option value="">— Standard (manual) —</option>';
+  for (var i=0; i<catalogo_KSB.length; i++) {
+    opts += '<option value="'+i+'">'+catalogo_KSB[i].modelo+' (ø'+catalogo_KSB[i].rotor_mm+'mm)</option>';
+  }
+  document.getElementById('selector-bomba1').innerHTML = opts;
+  document.getElementById('selector-bomba2').innerHTML = opts;
+}
+
+function cargarDesdeCatalogo(tablaId, selectorId, infoId) {
+  var idx = document.getElementById(selectorId).value;
+  var info = document.getElementById(infoId);
+  if (idx === '') {
+    info.style.display = 'none';
+    return;
+  }
+  var b = catalogo_KSB[parseInt(idx)];
+
+  // Mostrar info DS / DI
+  info.style.display = 'block';
+  info.innerHTML =
+    '<span style="color:#388bfd;">DS: '+b.DN_succion_mm+'mm</span>' +
+    '&nbsp;&nbsp;' +
+    '<span style="color:#3fb950;">DI: '+b.DN_impulsion_mm+'mm</span>' +
+    '&nbsp;&nbsp;' +
+    '<span style="color:var(--text3);">ø'+b.rotor_mm+'mm &nbsp; '+b.rpm+' rpm</span>';
+
+  // Limpiar tabla y cargar puntos
+  document.getElementById(tablaId).innerHTML = '';
+  for (var i=0; i<b.Q.length; i++) {
+    agregarFila(tablaId, b.Q[i], b.H[i], b.eta[i]!==null ? b.eta[i] : '');
+  }
+
+  // Actualizar RPM referencia
+  document.getElementById('rpm_ref').value = b.rpm;
+
+  graficarBase();
+}
+
 // Init
+
+poblarSelectores();
 document.getElementById('croquis-area').innerHTML = dibujarCroquis(
   parseFloat(document.getElementById('hg').value),
   parseFloat(document.getElementById('perdida').value),
