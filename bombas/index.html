@@ -449,10 +449,12 @@ function calcular() {
   `;
 }
 
+datosIniciales.forEach(d => agregarFila(d.q, d.h, d.e));
+
 const hg0 = parseFloat(document.getElementById('hg').value);
 const p0 = parseFloat(document.getElementById('perdida').value);
 actualizarCroquis(hg0, p0, 0, 0, false);
-actualizarGrafica();
+actualizarGrafica(null);
 
 document.getElementById('hg').addEventListener('input', () => {
   actualizarCroquis(parseFloat(document.getElementById('hg').value)||0, parseFloat(document.getElementById('perdida').value)||0, 0, 0, false);
