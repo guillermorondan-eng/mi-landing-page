@@ -875,38 +875,35 @@ function calcularK() {
 
 // ===== CATÁLOGO KSB MEGANORM =====
 var catalogo_KSB = [
-  {modelo:"KSB Meganorm 150-500",rpm:1450,rotor_mm:504,DN_succion_mm:200,DN_impulsion_mm:150,
-   Q:[0,100,200,300,400,500,600],H:[90,88,84,78,68,55,38],eta:[null,null,40,60,70,74,73]},
-  {modelo:"KSB Meganorm 200-250",rpm:1450,rotor_mm:269,DN_succion_mm:200,DN_impulsion_mm:200,
-   Q:[0,100,200,300,400,500,600,700,800],H:[19.5,19.2,18.5,17.5,16,13.5,10.5,7,3.5],eta:[null,null,null,60,75,80,84,85,83]},
-  {modelo:"KSB Meganorm 200-315",rpm:1450,rotor_mm:320,DN_succion_mm:250,DN_impulsion_mm:200,
-   Q:[0,100,200,300,400,500,600,700,800],H:[34.5,34,33,31.5,29.5,27,23.5,19,13.5],eta:[null,null,null,null,null,80,86,82,null]},
-  {modelo:"KSB Meganorm 200-400",rpm:1450,rotor_mm:404,DN_succion_mm:250,DN_impulsion_mm:200,
-   Q:[0,100,200,300,400,500,600,700,800],H:[58,57,55,52,49,45,40,33,24],eta:[null,null,null,null,75,78,81,83,81]},
-  {modelo:"KSB Meganorm 200-500",rpm:1450,rotor_mm:504,DN_succion_mm:250,DN_impulsion_mm:200,
-   Q:[0,100,200,300,400,500,600,700,800],H:[90,88,85,81,76,70,62,52,40],eta:[null,null,null,null,75,78,80,82,80]},
-  {modelo:"KSB Meganorm 250-300",rpm:1450,rotor_mm:313,DN_succion_mm:250,DN_impulsion_mm:250,
-   Q:[0,100,200,300,400,500,600,700,800,900,950,1000,1100,1200],H:[26.5,26.2,25.5,24.5,23,21,18.5,15.5,12.5,9.5,8.5,7,4.5,2.5],eta:[null,null,null,null,60,70,75,80,82,84,85,84,80,null]},
-  {modelo:"KSB Meganorm 250-315",rpm:1450,rotor_mm:324,DN_succion_mm:300,DN_impulsion_mm:250,
-   Q:[0,200,400,600,800,1000,1200,1400],H:[34.5,33.5,31.5,28.5,24.5,19.5,13.5,7],eta:[null,null,null,75,80,84,82,null]},
-  {modelo:"KSB Meganorm 250-400",rpm:1450,rotor_mm:404,DN_succion_mm:300,DN_impulsion_mm:250,
-   Q:[0,200,400,600,800,1000,1200],H:[60,58,54,49,42,33,22],eta:[null,null,null,75,82,86,84]},
-  {modelo:"KSB Meganorm 250-500",rpm:1450,rotor_mm:504,DN_succion_mm:300,DN_impulsion_mm:250,
-   Q:[0,200,400,600,800,1000,1200,1400],H:[90,88,84,79,72,63,52,38],eta:[null,null,null,75,80,83,85,83]},
-  {modelo:"KSB Meganorm 300-340",rpm:1450,rotor_mm:351,DN_succion_mm:300,DN_impulsion_mm:300,
-   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[30.5,30,29,27.5,25.5,22.5,18.5,14,9.5,5.5,2],eta:[null,null,null,null,80,84,85,84,82,75,null]},
-  {modelo:"KSB Meganorm 300-360",rpm:1450,rotor_mm:360,DN_succion_mm:300,DN_impulsion_mm:300,
-   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[39.5,39,38,36.5,34.5,31.5,27.5,23,17.5,11.5,5.5],eta:[null,null,null,75,80,83,85,88,85,80,null]},
-  {modelo:"KSB Meganorm 300-400",rpm:1450,rotor_mm:430,DN_succion_mm:350,DN_impulsion_mm:300,
-   Q:[0,200,400,600,800,1000,1200,1400,1600,1800],H:[64,63,61,58,54,49,43,36,27,17],eta:[null,null,null,75,80,84,86,87,86,82]},
-  {modelo:"KSB Meganorm 350-370A",rpm:1450,rotor_mm:396,DN_succion_mm:350,DN_impulsion_mm:350,
-   Q:[0,500,1000,1500,2000,2500,3000],H:[44,42,37,30,22,14,6],eta:[null,null,75,81,84,83,75]},
-  {modelo:"KSB Meganorm 350-370B",rpm:1450,rotor_mm:405,DN_succion_mm:350,DN_impulsion_mm:350,
-   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[48,47,45,43,40,36,31,25,19,12,6],eta:[null,null,null,null,78,80,82,83,82,80,null]},
-  {modelo:"KSB Meganorm 350-400A",rpm:1450,rotor_mm:422,DN_succion_mm:350,DN_impulsion_mm:350,
-   Q:[0,500,1000,1500,2000,2500],H:[52,51,48,43,36,27],eta:[null,null,null,80,83,82]},
-  {modelo:"KSB Meganorm 350-400B",rpm:1450,rotor_mm:407,DN_succion_mm:350,DN_impulsion_mm:350,
-   Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000,2200],H:[50,49,47,45,42,38,34,29,23,17,10,4],eta:[null,null,null,null,82,84,85,86,85,84,82,null]}
+  // 1450 rpm
+  {modelo:"KSB Meganorm 150-500",rpm:1450,rotor_mm:504,DN_succion_mm:200,DN_impulsion_mm:150,Q:[0,100,200,300,400,500,600],H:[90,88,84,78,68,55,38],eta:[null,null,40,60,70,74,73]},
+  {modelo:"KSB Meganorm 200-250",rpm:1450,rotor_mm:269,DN_succion_mm:200,DN_impulsion_mm:200,Q:[0,100,200,300,400,500,600,700,800],H:[19.5,19.2,18.5,17.5,16,13.5,10.5,7,3.5],eta:[null,null,null,60,75,80,84,85,83]},
+  {modelo:"KSB Meganorm 200-315",rpm:1450,rotor_mm:320,DN_succion_mm:250,DN_impulsion_mm:200,Q:[0,100,200,300,400,500,600,700,800],H:[34.5,34,33,31.5,29.5,27,23.5,19,13.5],eta:[null,null,null,null,null,80,86,82,null]},
+  {modelo:"KSB Meganorm 200-400",rpm:1450,rotor_mm:404,DN_succion_mm:250,DN_impulsion_mm:200,Q:[0,100,200,300,400,500,600,700,800],H:[58,57,55,52,49,45,40,33,24],eta:[null,null,null,null,75,78,81,83,81]},
+  {modelo:"KSB Meganorm 200-500",rpm:1450,rotor_mm:504,DN_succion_mm:250,DN_impulsion_mm:200,Q:[0,100,200,300,400,500,600,700,800],H:[90,88,85,81,76,70,62,52,40],eta:[null,null,null,null,75,78,80,82,80]},
+  {modelo:"KSB Meganorm 250-300",rpm:1450,rotor_mm:313,DN_succion_mm:250,DN_impulsion_mm:250,Q:[0,100,200,300,400,500,600,700,800,900,950,1000,1100,1200],H:[26.5,26.2,25.5,24.5,23,21,18.5,15.5,12.5,9.5,8.5,7,4.5,2.5],eta:[null,null,null,null,60,70,75,80,82,84,85,84,80,null]},
+  {modelo:"KSB Meganorm 250-315",rpm:1450,rotor_mm:324,DN_succion_mm:300,DN_impulsion_mm:250,Q:[0,200,400,600,800,1000,1200,1400],H:[34.5,33.5,31.5,28.5,24.5,19.5,13.5,7],eta:[null,null,null,75,80,84,82,null]},
+  {modelo:"KSB Meganorm 250-400",rpm:1450,rotor_mm:404,DN_succion_mm:300,DN_impulsion_mm:250,Q:[0,200,400,600,800,1000,1200],H:[60,58,54,49,42,33,22],eta:[null,null,null,75,82,86,84]},
+  {modelo:"KSB Meganorm 250-500",rpm:1450,rotor_mm:504,DN_succion_mm:300,DN_impulsion_mm:250,Q:[0,200,400,600,800,1000,1200,1400],H:[90,88,84,79,72,63,52,38],eta:[null,null,null,75,80,83,85,83]},
+  {modelo:"KSB Meganorm 300-340",rpm:1450,rotor_mm:351,DN_succion_mm:300,DN_impulsion_mm:300,Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[30.5,30,29,27.5,25.5,22.5,18.5,14,9.5,5.5,2],eta:[null,null,null,null,80,84,85,84,82,75,null]},
+  {modelo:"KSB Meganorm 300-360",rpm:1450,rotor_mm:360,DN_succion_mm:300,DN_impulsion_mm:300,Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[39.5,39,38,36.5,34.5,31.5,27.5,23,17.5,11.5,5.5],eta:[null,null,null,75,80,83,85,88,85,80,null]},
+  {modelo:"KSB Meganorm 300-400",rpm:1450,rotor_mm:430,DN_succion_mm:350,DN_impulsion_mm:300,Q:[0,200,400,600,800,1000,1200,1400,1600,1800],H:[64,63,61,58,54,49,43,36,27,17],eta:[null,null,null,75,80,84,86,87,86,82]},
+  {modelo:"KSB Meganorm 350-370A",rpm:1450,rotor_mm:396,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,500,1000,1500,2000,2500,3000],H:[44,42,37,30,22,14,6],eta:[null,null,75,81,84,83,75]},
+  {modelo:"KSB Meganorm 350-370B",rpm:1450,rotor_mm:405,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000],H:[48,47,45,43,40,36,31,25,19,12,6],eta:[null,null,null,null,78,80,82,83,82,80,null]},
+  {modelo:"KSB Meganorm 350-400A",rpm:1450,rotor_mm:422,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,500,1000,1500,2000,2500],H:[52,51,48,43,36,27],eta:[null,null,null,80,83,82]},
+  {modelo:"KSB Meganorm 350-400B",rpm:1450,rotor_mm:407,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,200,400,600,800,1000,1200,1400,1600,1800,2000,2200],H:[50,49,47,45,42,38,34,29,23,17,10,4],eta:[null,null,null,null,82,84,85,86,85,84,82,null]},
+  // 960 rpm
+  {modelo:"KSB Meganorm 300-340",rpm:960,rotor_mm:351,DN_succion_mm:300,DN_impulsion_mm:300,Q:[0,200,400,600,800,1000,1200,1400],H:[13.5,13.2,12.5,11.5,10,7.5,5,2.5],eta:[null,null,null,75,82,85,84,75]},
+  {modelo:"KSB Meganorm 300-360",rpm:960,rotor_mm:360,DN_succion_mm:300,DN_impulsion_mm:300,Q:[0,200,400,600,800,1000,1200],H:[18,17.5,16.5,15,13,10,6.5],eta:[null,null,75,80,83,85,83]},
+  {modelo:"KSB Meganorm 300-400",rpm:960,rotor_mm:430,DN_succion_mm:350,DN_impulsion_mm:300,Q:[0,200,400,600,800,1000,1200],H:[28,27.5,26.5,25,22.5,19,14.5],eta:[null,null,null,75,82,87,86]},
+  {modelo:"KSB Meganorm 350-370A",rpm:960,rotor_mm:396,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,200,400,600,800,1000,1200,1400,1600,1800],H:[19.5,19.2,18.5,17.5,16,14,11.5,8.5,5.5,2.5],eta:[null,null,null,75,79,83,84,83,81,null]},
+  {modelo:"KSB Meganorm 350-370B",rpm:960,rotor_mm:405,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,200,400,600,800,1000,1200,1400],H:[21,20.5,19.5,18,16,13.5,10.5,7],eta:[null,null,null,75,78,80,83,82]},
+  {modelo:"KSB Meganorm 350-400A",rpm:960,rotor_mm:422,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,200,400,600,800,1000,1200,1400,1600,1800],H:[23.5,23,22,20.5,18.5,16.5,14,11,7.5,4],eta:[null,null,null,null,78,80,82,83,82,null]},
+  {modelo:"KSB Meganorm 350-400B",rpm:960,rotor_mm:407,DN_succion_mm:350,DN_impulsion_mm:350,Q:[0,200,400,600,800,1000,1200,1400],H:[24,23.5,22.5,21,19,16.5,13.5,10],eta:[null,null,null,null,80,84,86,85]},
+  {modelo:"KSB Meganorm 400-440A",rpm:960,rotor_mm:452,DN_succion_mm:400,DN_impulsion_mm:400,Q:[0,500,1000,1500,2000,2500,3000],H:[24,23,21,18,14,9,4],eta:[null,null,75,84,87,85,78]},
+  {modelo:"KSB Meganorm 400-440B",rpm:960,rotor_mm:456,DN_succion_mm:400,DN_impulsion_mm:400,Q:[0,500,1000,1500,2000],H:[23,22,19,15,9],eta:[null,null,79,83,85]},
+  {modelo:"KSB Meganorm 400-540A",rpm:960,rotor_mm:529,DN_succion_mm:500,DN_impulsion_mm:400,Q:[0,500,1000,1500,2000,2500,3000,3500],H:[38,37,35,32,28,24,19,15],eta:[null,null,null,79,81,83,84,83]},
+  {modelo:"KSB Meganorm 400-540B",rpm:960,rotor_mm:504,DN_succion_mm:500,DN_impulsion_mm:400,Q:[0,500,1000,1500,2000,2500,3000],H:[33,32,30,27,23,18,13],eta:[null,null,null,80,84,87,86]}
 ];
 
 function cargarKSugerido(k) {
@@ -921,7 +918,7 @@ function cargarKSugerido(k) {
 function poblarSelectores() {
   var opts = '<option value="">— Standard (manual) —</option>';
   for (var i=0; i<catalogo_KSB.length; i++) {
-    opts += '<option value="'+i+'">'+catalogo_KSB[i].modelo+' (ø'+catalogo_KSB[i].rotor_mm+'mm)</option>';
+    opts += '<option value="'+i+'">'+catalogo_KSB[i].modelo+' (ø'+catalogo_KSB[i].rotor_mm+'mm - '+catalogo_KSB[i].rpm+' rpm)</option>';
   }
   document.getElementById('selector-bomba1').innerHTML = opts;
   document.getElementById('selector-bomba2').innerHTML = opts;
